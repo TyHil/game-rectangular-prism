@@ -1,7 +1,7 @@
 /*
-  Asteroids, Astro Party, Clonium, and Minesweeper games on an Arduino Nano 33 IoT with
-  a 64x128 OLED screen, 4 capacitive touch buttons, an EEPROM module, a 9v battery, and
-  a power switch all in a black 3D printed case.
+  Asteroids, Astro Party, Clonium, and Minesweeper on an Arduino Nano 33 IoT with a
+  64x128 OLED screen, 4 capacitive touch buttons, an EEPROM module, a 9v battery, and a
+  power switch all in a black 3D printed case.
   Written by Tyler Hill
   Version 5.6
 */
