@@ -1,3 +1,9 @@
+/*
+  Clear first 25 bytes of Game Rectangular Prism Version 2's EEPROM Module. This is
+  where the current game and Asteroids highscores are stored.
+  Written by Tyler Hill
+  Version 1.0
+*/
 #include <Wire.h>
 byte readEEPROM(unsigned int location) {//read the value of a spot in EEPROM for highscores and last game played
   Wire.beginTransmission(0x50);
