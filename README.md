@@ -16,5 +16,5 @@ Version 1 is the original with Astro Party on an Arduino Nano Every with a 64x12
 ![Device Front with Astro Party on screen](Photos/20210108_170209.jpg)
 ![Inside Top view of components](Photos/20210108_170327.jpg)
 ![Inside angled view of components](Photos/20210108_170337.jpg)
-## Lisence
+## License
 GPL-3.0 License
