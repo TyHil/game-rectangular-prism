@@ -843,7 +843,7 @@ void setup() {
         rightHeight = 64 * (pitch - pitchCorrection) + 32;//solved for x = 128
         display.fillTriangle(0, leftHeight, 128, rightHeight, 128 * (rightHeight < leftHeight), max(leftHeight, rightHeight), WHITE);//top fill
         if (leftHeight < 128 and rightHeight < 128) display.fillRect(0, max(leftHeight, rightHeight), 128, 128 - max(leftHeight, rightHeight), WHITE);//bottom fill if needed
-        int8_t angle = atan(pitch)*180/M_PI;//degrees
+        int8_t angle = atan(pitch - pitchCorrection)*180/M_PI;//degrees
         display.setTextSize(4);
         display.setCursor(63-10*String(angle).length(), 15);
         display.setTextColor(BLACK);
@@ -851,7 +851,6 @@ void setup() {
         display.setCursor(65-10*String(angle).length(), 17);
         display.setTextColor(WHITE);
         display.print(angle);
-        //display.print("°");
         display.display();
       } else if (disp) {
         disp = false;
