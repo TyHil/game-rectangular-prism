@@ -1,13 +1,15 @@
 /*
   Game Rectangular Prism Version 2 Code
-  Asteroids, Astro Party, Clonium, and Minesweeper on an Arduino Nano 33 IoT with a
-  64x128 OLED screen, 4 capacitive touch buttons, an EEPROM module, a 9v battery, and a
-  power switch all in a black 3D printed case.
+  Asteroids, Astro Party, Clonium, and Minesweeper games and Random Number Generator
+  and Level utilities on an Arduino Nano 33 IoT with a 64x128 OLED screen, 4 capacitive
+  touch buttons, an EEPROM module, a 9v battery, and a power switch all in a black 3D
+  printed case.
   Written by Tyler Hill
-  Version 5.6
+  Version 6.0
 */
 #include "shipAsteroidLaser.h"
 #include "boards.h"
+#include <Arduino_LSM6DS3.h>
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 uint8_t game;//which game is being played
 boolean disp = true;//limits display refreshes when nothing has changed
@@ -119,9 +121,9 @@ void newhigh(int8_t level, uint8_t score) {//sets a new high score for Asteroids
 /*Gmae Selection Functions*/
 
 void gameChangerDisplay() {//displays menu to change between different games
-  const String names[6] = {"Switch Game", "Asteroids", "Astro Party", "Clonium", "Random Number", "Minesweeper"};//game names
+  const String names[7] = {"Switch Game", "Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Number", "Level"};//game names
   display.setTextSize(1);
-  for (uint8_t i = 0; i < 6; i++) {//game list
+  for (uint8_t i = 0; i < 7; i++) {//game list
     display.setCursor(30, 9 * i);
     display.print(names[i]);
   }
@@ -133,7 +135,7 @@ void gameChangerDisplay() {//displays menu to change between different games
 }
 void gameChanger() {//update game selection and restart arduino on choice
   if (digitalRead(5) == 1) {
-    game = (game + 1) % 5;
+    game = (game + 1) % 6;
     disp = true;
   } else if (digitalRead(2) == 1 or digitalRead(3) == 1) {
     updateEEPROM(25, game);
@@ -201,7 +203,7 @@ void setup() {
     waitAllUnclick();
     display.setTextSize(2);
     uint8_t score = 0;
-    ship Ship = ship(64, 32, PI, 0);
+    ship Ship = ship(64, 32, M_PI, 0);
     asteroid* asteroidList = new asteroid[2 * (level + 1)];
     laser* laserList = new laser[2];
     for (uint8_t i = 0; i < 2; i++) asteroidList[i] = asteroid(8, 0);
@@ -250,7 +252,7 @@ void setup() {
                       asteroidList[l].Size = 8;
                       asteroidList[l].X = asteroidList[i].X + 8;
                       asteroidList[l].Y = asteroidList[i].Y + 8;
-                      asteroidList[l].dir = asteroidList[i].dir - PI;
+                      asteroidList[l].dir = asteroidList[i].dir - M_PI;
                     } else score += 6;
                   }
                 }
@@ -343,7 +345,7 @@ void setup() {
     unsigned long laserButtonTiming[2], shipTurnTiming[2];//timers for button presses
     for (uint8_t i = 0; i < 2; i++) laserList[i] = new laser[2];
     shipList[0] = ship(32, 32, 0, 0);
-    shipList[1] = ship(96, 32, (3 / 2) * PI, 1);
+    shipList[1] = ship(96, 32, (3 / 2) * M_PI, 1);
     for (uint8_t i = 0; i < 2; i++) asteroidList[i] = asteroid(8, 1);
     for (uint8_t i = 2; i < 7; i++) asteroidList[i] = asteroid(16, 1);
     for (uint8_t i = 7; i < 12; i++) asteroidList[i] = asteroid(0, 1);
@@ -385,7 +387,7 @@ void setup() {
                         asteroidList[l].Size = 8;
                         asteroidList[l].X = asteroidList[i].X + 8;
                         asteroidList[l].Y = asteroidList[i].Y + 8;
-                        asteroidList[l].dir = asteroidList[i].dir - PI;
+                        asteroidList[l].dir = asteroidList[i].dir - M_PI;
                       }
                     }
                   }
@@ -591,71 +593,9 @@ void setup() {
     }
   }
 
-  /*Random Number Generator*/
-
-  else if (game == 3) {
-    int8_t level = 0;
-    unsigned long generalTimer;
-    const String names[5] = {"Random Number", "Min", "Max", "Dec", "Result"};//names
-    int16_t nums[3] = {0, 1, 0};//min, max, and number of decimal places
-    float result = random(0, 2);
-    display.setTextSize(1);
-    while (true) {
-      if (disp) {
-        disp = false;
-        display.clearDisplay();
-        if (level >= 0) {
-          for (uint8_t i = 0; i < 5; i++) {//print names
-            display.setCursor(1, 9 * i);
-            display.print(names[i]);
-            display.setCursor(40, 9 * i);
-            if (i > 0 and i < 4) display.print(nums[i - 1]);
-            else if (i == 4) display.print(result);
-          }
-          display.fillRect(0, 9 * (level + 1), names[level + 1].length() * 6 + 1, 8, WHITE);//highlight selection
-          display.setTextColor(BLACK);
-          display.setCursor(1, 9 * (level + 1));
-          display.print(names[level + 1]);
-          display.setTextColor(WHITE);
-        } else gameChangerDisplay();
-        display.display();
-      }
-      if (millis() - generalTimer >= 100) {
-        if (digitalRead(4) == 1) {
-          level = min(level + 1, 3);
-          generalTimer = millis();
-          disp = true;
-        }
-        if (level >= 0) {
-          if (digitalRead(5) == 1) {
-            level = max(level - 1, -1);
-            generalTimer = millis();
-            disp = true;
-          } else if ((digitalRead(3) == 1 or digitalRead(2) == 1) and level == 3) {//new result
-            result = (float) random(nums[0] * pow(10, nums[2]), nums[1] * pow(10, nums[2]) + 1) / pow(10, nums[2]);
-            disp = true;
-          } else if (digitalRead(3) == 1) {//increase nums
-            nums[level]--;
-            nums[1] = max(nums[0] + 1, nums[1]);
-            nums[2] = min(max(nums[2], 0), 2);
-            generalTimer = millis();
-            disp = true;
-          } else if (digitalRead(2) == 1) {//decrease nums
-            nums[level]++;
-            nums[0] = min(nums[0], nums[1] - 1);
-            nums[2] = min(max(nums[2], 0), 2);
-            generalTimer = millis();
-            disp = true;
-          }
-        } else if (level == -1) gameChanger();
-        delay(50);
-      }
-    }
-  }
-
   /*Minesweeper*/
 
-  else if (game == 4) {
+  else if (game == 3) {
     int8_t level = 4;
     unsigned long generalTimer;
     uint8_t nums[3] = {8, 4, 5};
@@ -820,6 +760,121 @@ void setup() {
         digitalWrite(6, LOW);
       }
       delay(200);
+    }
+  }
+
+  /*Random Number Generator*/
+
+  else if (game == 4) {
+    int8_t level = 0;
+    unsigned long generalTimer;
+    const String names[5] = {"Random Number", "Min", "Max", "Dec", "Result"};//names
+    int16_t nums[3] = {0, 1, 0};//min, max, and number of decimal places
+    float result = random(0, 2);
+    display.setTextSize(1);
+    while (true) {
+      if (disp) {
+        disp = false;
+        display.clearDisplay();
+        if (level >= 0) {
+          for (uint8_t i = 0; i < 5; i++) {//print names
+            display.setCursor(1, 9 * i);
+            display.print(names[i]);
+            display.setCursor(40, 9 * i);
+            if (i > 0 and i < 4) display.print(nums[i - 1]);
+            else if (i == 4) display.print(result);
+          }
+          display.fillRect(0, 9 * (level + 1), names[level + 1].length() * 6 + 1, 8, WHITE);//highlight selection
+          display.setTextColor(BLACK);
+          display.setCursor(1, 9 * (level + 1));
+          display.print(names[level + 1]);
+          display.setTextColor(WHITE);
+        } else gameChangerDisplay();
+        display.display();
+      }
+      if (millis() - generalTimer >= 100) {
+        if (digitalRead(4) == 1) {
+          level = min(level + 1, 3);
+          generalTimer = millis();
+          disp = true;
+        }
+        if (level >= 0) {
+          if (digitalRead(5) == 1) {
+            level = max(level - 1, -1);
+            generalTimer = millis();
+            disp = true;
+          } else if ((digitalRead(3) == 1 or digitalRead(2) == 1) and level == 3) {//new result
+            result = (float) random(nums[0] * pow(10, nums[2]), nums[1] * pow(10, nums[2]) + 1) / pow(10, nums[2]);
+            disp = true;
+          } else if (digitalRead(3) == 1) {//increase nums
+            nums[level]--;
+            nums[1] = max(nums[0] + 1, nums[1]);
+            nums[2] = min(max(nums[2], 0), 2);
+            generalTimer = millis();
+            disp = true;
+          } else if (digitalRead(2) == 1) {//decrease nums
+            nums[level]++;
+            nums[0] = min(nums[0], nums[1] - 1);
+            nums[2] = min(max(nums[2], 0), 2);
+            generalTimer = millis();
+            disp = true;
+          }
+        } else if (level == -1) gameChanger();///remove else
+        delay(50);
+      }
+    }
+  }
+
+  /*Level*/
+
+  else if (game == 5) {
+    int8_t level = 1;
+    unsigned long generalTimer;
+    float pitch, pitchCorrection;//calibration
+    IMU.begin();
+    while (true) {
+      if (level and IMU.accelerationAvailable()) {
+        display.clearDisplay();
+        float accelX, accelY, accelZ;
+        int16_t leftHeight, rightHeight;
+        IMU.readAcceleration(accelX, accelY, accelZ);
+        pitch = accelX / sqrt(accelY * accelY + accelZ * accelZ);//slope of level line
+        leftHeight = -64 * (pitch - pitchCorrection) + 32;//equation through (64,32) solved for x = 0
+        rightHeight = 64 * (pitch - pitchCorrection) + 32;//solved for x = 128
+        display.fillTriangle(0, leftHeight, 128, rightHeight, 128 * (rightHeight < leftHeight), max(leftHeight, rightHeight), WHITE);//top fill
+        if (leftHeight < 128 and rightHeight < 128) display.fillRect(0, max(leftHeight, rightHeight), 128, 128 - max(leftHeight, rightHeight), WHITE);//bottom fill if needed
+        int8_t angle = atan(pitch)*180/M_PI;//degrees
+        display.setTextSize(4);
+        display.setCursor(63-10*String(angle).length(), 15);
+        display.setTextColor(BLACK);
+        display.print(angle);
+        display.setCursor(65-10*String(angle).length(), 17);
+        display.setTextColor(WHITE);
+        display.print(angle);
+        //display.print("°");
+        display.display();
+      } else if (disp) {
+        disp = false;
+        display.clearDisplay();
+        gameChangerDisplay();
+        display.display();
+      }
+      if (!level) gameChanger();
+      if (millis() - generalTimer >= 100) {
+        if (digitalRead(4) == 1) {//level
+          level = 1;
+          generalTimer = millis();
+        } else if (digitalRead(5) == 1) {//game selection
+          level = 0;
+          generalTimer = millis();
+          disp = true;
+        } else if (digitalRead(3) == 1 or digitalRead(2) == 1) {//calibrate
+          pitchCorrection = pitch;
+          generalTimer = millis();
+          disp = true;
+        }
+      }
+      delay(50);
     }
   }
 

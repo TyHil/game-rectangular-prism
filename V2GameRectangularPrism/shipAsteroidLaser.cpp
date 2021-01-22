@@ -23,10 +23,10 @@ ship::ship(float setX, float setY, float setDir, bool setColor) {
   color = setColor;
 }
 void ship::CWTurn() {
-  dir += PI / 8;
+  dir += M_PI / 8;
 }
 void ship::CCWTurn() {
-  dir -= PI / 8;
+  dir -= M_PI / 8;
 }
 void ship::moveAndDisplay(bool changePos, bool lasersReadyToShoot[2], Adafruit_SSD1306& display) {
   if (changePos) {

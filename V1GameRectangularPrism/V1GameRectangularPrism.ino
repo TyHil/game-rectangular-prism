@@ -4,10 +4,10 @@
   battery, and a power switch all in a white 3D printed case.
   Written by Tyler Hill
   Version 1.0
-  Differences from the Astro Party of AsteroidsPartyCloniumRandMinesweeper include:
+  Differences from the Astro Party of Version 2 include:
     Simplification of start display due to lack of need to change between games.
     digitalRead operation in refrence to buttons is reversed.
-    Uses reset function instead of writing pin 6 wired to the reset pin low.
+    Uses reset function instead of writing pin 6 (wired to the reset pin) low.
 */
 #include "shipAsteroidLaser.h"
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
