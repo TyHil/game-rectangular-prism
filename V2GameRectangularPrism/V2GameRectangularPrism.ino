@@ -836,21 +836,17 @@ void setup() {
       if (level and IMU.accelerationAvailable()) {
         display.clearDisplay();
         float accelX, accelY, accelZ;
-        int16_t leftHeight, rightHeight;
         IMU.readAcceleration(accelX, accelY, accelZ);
         pitch = accelX / sqrt(accelY * accelY + accelZ * accelZ);//slope of level line
-        leftHeight = -64 * (pitch - pitchCorrection) + 32;//equation through (64,32) solved for x = 0
-        rightHeight = 64 * (pitch - pitchCorrection) + 32;//solved for x = 128
-        display.fillTriangle(0, leftHeight, 128, rightHeight, 128 * (rightHeight < leftHeight), max(leftHeight, rightHeight), WHITE);//top fill
-        if (leftHeight < 128 and rightHeight < 128) display.fillRect(0, max(leftHeight, rightHeight), 128, 128 - max(leftHeight, rightHeight), WHITE);//bottom fill if needed
-        int8_t angle = atan(pitch - pitchCorrection)*180/M_PI;//degrees
+        int8_t angle = atan(pitch - pitchCorrection) * 180 / M_PI; //degrees
         display.setTextSize(4);
-        display.setCursor(63-10*String(angle).length(), 15);
-        display.setTextColor(BLACK);
+        display.setCursor(64 - 10 * String(angle).length() - 2 * (String(angle).length() - 1), 16);
         display.print(angle);
-        display.setCursor(65-10*String(angle).length(), 17);
-        display.setTextColor(WHITE);
-        display.print(angle);
+        for (uint8_t x = 0; x < 128; x++) {
+          for (int16_t y = min(max((pitch - pitchCorrection) * (x - 64) + 32, 0), 66) - 2; y < 64; y++) { //for pixels past level line
+            display.drawPixel(x, y, !display.getPixel(x, y)); //invert color
+          }
+        }
         display.display();
       } else if (disp) {
         disp = false;
