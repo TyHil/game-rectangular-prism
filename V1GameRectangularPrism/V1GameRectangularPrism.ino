@@ -2,7 +2,7 @@
   Game Rectangular Prism Version 1 Code
   Astro Party on an Arduino Nano Every with a 64x128 OLED screen, 4 buttons, a 9v
   battery, and a power switch all in a white 3D printed case.
-  Written by Tyler Hill
+  Written by Tyler Gordon Hill
   Version 1.0
   Differences from the Astro Party of Version 2 include:
     Simplification of start display due to lack of need to change between games.

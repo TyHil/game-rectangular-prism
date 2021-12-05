@@ -1,6 +1,6 @@
 /*
-  Ship, asteroid, and laser, header for Asteroids and Astro Party
-  Written by Tyler Hill
+  Ship, asteroid, and laser, library header for Asteroids and Astro Party
+  Written by Tyler Gordon Hill
 */
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -8,8 +8,8 @@
 
 class ship {
   public:
-    float X, Y, dir, dirV, XVelocity = 0, YVelocity = 0;//position, direction, rotaion velocity, movement velocities
-    int16_t XPoints[3][3], YPoints[3][3];//Points of 3 ship triangles
+    float X, Y, dir, dirV, XVelocity = 0, YVelocity = 0; //position, direction, rotaion velocity, movement velocities
+    int16_t XPoints[3][3], YPoints[3][3]; //Points of 3 ship triangles
     bool color;
     ship();
     ship(float setX, float setY, float setDir, bool setColor);
@@ -21,8 +21,8 @@ class ship {
 
 class asteroid {
   public:
-    float X, Y, dir;//position, direction
-    uint8_t Size;//size
+    float X, Y, dir; //position, direction
+    uint8_t Size; //size
     asteroid();
     asteroid(uint8_t setSize, bool fullscreen);
     bool hit(float hitDir);
@@ -32,11 +32,11 @@ class asteroid {
 
 class laser {
   public:
-    float dir, XVelocity, YVelocity;//direction, velocity
-    uint8_t X, Y;//position
-    int8_t XDist, YDist;//distance away detection
-    unsigned long Time;//for timing between shots
-    bool hit = true;//has the laser hit something
+    float dir, XVelocity, YVelocity; //direction, velocity
+    uint8_t X, Y; //position
+    int8_t XDist, YDist; //distance away detection
+    unsigned long Time; //for timing between shots
+    bool hit = true; //has the laser hit something
     void setUp(float setDir, uint8_t setX, uint8_t setY, float setXVelocity, float setYVelocity);
     bool readyToShoot();
     bool readyToMove();

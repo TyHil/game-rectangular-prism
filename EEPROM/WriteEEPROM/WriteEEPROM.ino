@@ -1,5 +1,5 @@
 /*
-  Clear first 25 bytes of Game Rectangular Prism Version 2's EEPROM Module. This is
+  Write first 26 bytes of Game Rectangular Prism Version 2's EEPROM Module. This is
   where the current game and Asteroids highscores are stored.
   Written by Tyler Hill
   Version 1.0
@@ -26,6 +26,12 @@ void updateEEPROM(unsigned int location, byte data) {//update the value of a spo
 }
 void setup() {
   Wire.begin();
-  for (uint8_t i = 0; i < 26; i++) updateEEPROM(i, 0);
+  uint8_t toWrite[26] =
+  {84, 71, 72, 10, 89,
+   84, 71, 72, 10, 86,
+   84, 71, 72, 10, 85,
+   84, 71, 72, 10, 84,
+   84, 71, 72, 10, 81, 0};
+  for (uint8_t i = 0; i < 26; i++) updateEEPROM(i, toWrite[i]);
 }
 void loop() {}
