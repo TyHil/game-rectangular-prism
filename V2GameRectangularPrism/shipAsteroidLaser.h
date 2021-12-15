@@ -15,6 +15,7 @@ class ship {
     ship(float setX, float setY, float setDir, bool setColor);
     void CWTurn();
     void CCWTurn();
+    void CWBoost();
     void moveAndDisplay(bool changePos, bool lasersReadyToShoot[2], Adafruit_SSD1306& display);
     bool pointInShip(uint8_t XPoint, uint8_t YPoint);
 };

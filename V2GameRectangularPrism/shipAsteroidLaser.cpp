@@ -28,6 +28,11 @@ void ship::CWTurn() {
 void ship::CCWTurn() {
   dir -= M_PI / 8;
 }
+void ship::CWBoost() {
+  dir += M_PI / 2 - M_PI / 8;
+  XVelocity += sin(dir) * 4;
+  YVelocity += cos(dir) * 4;
+}
 void ship::moveAndDisplay(bool changePos, bool lasersReadyToShoot[2], Adafruit_SSD1306& display) {
   if (changePos) {
     XVelocity += sin(dir) / 2;

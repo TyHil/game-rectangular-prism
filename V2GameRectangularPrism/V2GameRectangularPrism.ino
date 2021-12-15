@@ -118,7 +118,7 @@ void newhigh(int8_t level, uint8_t score) { //sets a new high score for Asteroid
   delay(100);
 }
 
-/*Gmae Selection Functions*/
+/*Game Selection Functions*/
 
 void gameChangerDisplay() { //displays menu to change between different games
   const String names[7] = {"Switch Game", "Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Number", "Level"}; //game names
@@ -341,7 +341,7 @@ void setup() {
     ship* shipList = new ship[2];
     asteroid* asteroidList = new asteroid[12];
     laser** laserList = new laser*[2];
-    unsigned long laserButtonTiming[2], shipTurnTiming[2]; //timers for button presses
+    unsigned long laserButtonTiming[2], shipTurnTiming[2], lastNoTurn[2], lastTurn[2]; //timers for button presses
     for (uint8_t i = 0; i < 2; i++) laserList[i] = new laser[2];
     shipList[0] = ship(32, 32, 0, 0);
     shipList[1] = ship(96, 32, (3 / 2) * M_PI, 1);
@@ -358,8 +358,15 @@ void setup() {
       for (uint8_t z = 0; z < 2; z++) { //z is used to diferentiate between ships
         if (millis() - shipTurnTiming[z] >= 50) { //turning
           if (digitalRead(-3 * z + 5)) {
-            shipList[z].CWTurn();
+            if (millis() - lastNoTurn[z] <= 80 and millis() - lastTurn[z] <= 280) {
+              shipList[z].CWBoost();
+            } else {
+              shipList[z].CWTurn();
+              lastTurn[z] = millis();
+            }
             shipTurnTiming[z] = millis();
+          } else {
+            lastNoTurn[z] = millis();
           }
         }
         shipList[z].moveAndDisplay(1, new bool[2] {laserList[z][0].readyToShoot(), laserList[z][1].readyToShoot()}, display); //always moving
