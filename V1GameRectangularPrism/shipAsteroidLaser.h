@@ -10,12 +10,13 @@ class ship {
   public:
     float X, Y, dir, dirV, XVelocity = 0, YVelocity = 0; //position, direction, rotaion velocity, movement velocities
     int16_t XPoints[3][3], YPoints[3][3]; //Points of 3 ship triangles
+    uint8_t power = 0;
+    unsigned long flash;
     bool color;
     ship();
     ship(float setX, float setY, float setDir, bool setColor);
-    void CWTurn();
-    void CCWTurn();
-    void CWBoost();
+    void turn(bool CW);
+    void boost(bool CW);
     void moveAndDisplay(bool changePos, bool lasersReadyToShoot[2], Adafruit_SSD1306& display);
     bool pointInShip(uint8_t XPoint, uint8_t YPoint);
 };
@@ -24,9 +25,10 @@ class asteroid {
   public:
     float X, Y, dir; //position, direction
     uint8_t Size; //size
+    bool power; //powerup
     asteroid();
-    asteroid(uint8_t setSize, bool fullscreen);
-    bool hit(float hitDir);
+    asteroid(uint8_t setSize, bool setPower, bool fullscreen);
+    uint8_t hit(float hitDir);
     void moveAndDisplay(Adafruit_SSD1306& display);
     bool pointInAsteroid(uint8_t XPoint, uint8_t YPoint);
 };

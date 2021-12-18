@@ -5,7 +5,7 @@
   touch buttons, an EEPROM module, a 9v battery, and a power switch all in a black 3D
   printed case.
   Written by Tyler Gordon Hill
-  Version 6.1
+  Version 6.2
 */
 #include "shipAsteroidLaser.h"
 #include "boards.h"
@@ -206,9 +206,9 @@ void setup() {
     ship Ship = ship(64, 32, M_PI, 0);
     asteroid* asteroidList = new asteroid[2 * (level + 1)];
     laser* laserList = new laser[2];
-    for (uint8_t i = 0; i < 2; i++) asteroidList[i] = asteroid(8, 0);
-    for (uint8_t i = 2; i < level + 2; i++) asteroidList[i] = asteroid(16, 0);
-    for (uint8_t i = level + 2; i < 2 * (level + 1); i++) asteroidList[i] = asteroid(0, 0);
+    for (uint8_t i = 0; i < 2; i++) asteroidList[i] = asteroid(8, 0, 0);
+    for (uint8_t i = 2; i < level + 2; i++) asteroidList[i] = asteroid(16, 0, 0);
+    for (uint8_t i = level + 2; i < 2 * (level + 1); i++) asteroidList[i] = asteroid(0, 0, 0);
     unsigned long laserButtonTiming, shipTurnTiming, scoreTime = millis(); //timer for button presses and score
 
     /*Game*/
@@ -216,10 +216,10 @@ void setup() {
       display.clearDisplay();
       if (millis() - shipTurnTiming >= 50) { //turning
         if (digitalRead(5)) {
-          Ship.CWTurn();
+          Ship.turn(1);
           shipTurnTiming = millis();
         } else if (digitalRead(4)) {
-          Ship.CCWTurn();
+          Ship.turn(0);
           shipTurnTiming = millis();
         }
       }
@@ -244,7 +244,8 @@ void setup() {
                 for (uint8_t o = 0; o < 2; o++) {
                   if (asteroidList[i].pointInAsteroid(laserList[m].X + n, laserList[m].Y + o)) {
                     laserList[m].hit = true;
-                    if (asteroidList[i].hit(laserList[m].dir)) { //reurns one if asteroid spilts and a new asteroid needs to be created
+                    asteroidList[i].hit(laserList[m].dir);
+                    if (asteroidList[i].Size == 8) { //spilts and a new asteroid needs to be created
                       score += 1;
                       uint8_t l;
                       for (l = 0; asteroidList[l].Size != 0; l++) {}
@@ -341,13 +342,16 @@ void setup() {
     ship* shipList = new ship[2];
     asteroid* asteroidList = new asteroid[12];
     laser** laserList = new laser*[2];
-    unsigned long laserButtonTiming[2], shipTurnTiming[2], lastNoTurn[2], lastTurn[2]; //timers for button presses
+    unsigned long laserButtonTiming[2], shipTurnTiming[2], lastNoTurn[2], lastTurn[2], secondLastNoTurn[2], asteroidSpawn = millis(), textDisplay; //timers for button presses
+    bool turnDir = 1, win = 0, winner;
+    String powers[] = {"Reverse", "Laser"};
+    uint8_t textDisplayNum;
     for (uint8_t i = 0; i < 2; i++) laserList[i] = new laser[2];
     shipList[0] = ship(32, 32, 0, 0);
     shipList[1] = ship(96, 32, (3 / 2) * M_PI, 1);
-    for (uint8_t i = 0; i < 2; i++) asteroidList[i] = asteroid(8, 1);
-    for (uint8_t i = 2; i < 7; i++) asteroidList[i] = asteroid(16, 1);
-    for (uint8_t i = 7; i < 12; i++) asteroidList[i] = asteroid(0, 1);
+    for (uint8_t i = 0; i < 4; i++) asteroidList[i] = asteroid(8, 0, 1);
+    for (uint8_t i = 4; i < 8; i++) asteroidList[i] = asteroid(16, i == 4 or i == 5, 1);
+    for (uint8_t i = 8; i < 12; i++) asteroidList[i] = asteroid(0, 0, 1);
 
     /*Game*/
     while (true) {
@@ -355,14 +359,33 @@ void setup() {
       for (uint8_t i = 0; i < 12; i++) { //asteroid movement and display
         asteroidList[i].moveAndDisplay(display);
       }
+      if (millis() - asteroidSpawn >= 15000) { //spawn asteroids
+        for (uint8_t j = 0; j < 2; j++) {
+          uint8_t i, k = 0, count16 = 0, count0 = 0;
+          for (i = 0; i < 12; i++) {
+            if (asteroidList[k].Size != 0) k++;
+            if (asteroidList[i].Size == 16) count16++;
+            else if (asteroidList[i].Size == 0) count0++;
+          }
+          if (asteroidList[k].Size == 0 and count0 - 1 > count16) {
+            asteroidList[k].Size = 16;
+            asteroidList[k].dir = random(0, 629) / 100.0; //random dir
+            asteroidList[k].X = random(0, 128); //random anywhere
+            asteroidList[k].Y = random(0, 64);
+            asteroidList[k].power = random(0, 2);
+          }
+        }
+        asteroidSpawn = millis();
+      }
       for (uint8_t z = 0; z < 2; z++) { //z is used to diferentiate between ships
         if (millis() - shipTurnTiming[z] >= 50) { //turning
           if (digitalRead(-3 * z + 5)) {
-            if (millis() - lastNoTurn[z] <= 80 and millis() - lastTurn[z] <= 280) {
-              shipList[z].CWBoost();
+            if (millis() - lastNoTurn[z] <= 80 and millis() - lastTurn[z] <= 280 and millis() - secondLastNoTurn[z] <= 280) {
+              shipList[z].boost(turnDir);
             } else {
-              shipList[z].CWTurn();
+              shipList[z].turn(turnDir);
               lastTurn[z] = millis();
+              secondLastNoTurn[z] = lastNoTurn[z];
             }
             shipTurnTiming[z] = millis();
           } else {
@@ -372,8 +395,26 @@ void setup() {
         shipList[z].moveAndDisplay(1, new bool[2] {laserList[z][0].readyToShoot(), laserList[z][1].readyToShoot()}, display); //always moving
         for (uint8_t i = 0; i < 2; i++) { //shoot laser on button press
           if (digitalRead(-z + 4) and laserList[z][i].readyToShoot() and millis() - laserButtonTiming[z] > 100) {
-            laserList[z][i].setUp(shipList[z].dir, shipList[z].X + sin(shipList[z].dir) * 3, shipList[z].Y + cos(shipList[z].dir) * 3, shipList[z].XVelocity, shipList[z].YVelocity);
-            laserButtonTiming[z] = millis();
+            if (shipList[z].power) {
+              if (shipList[z].power == 2) {
+                for (int8_t x = -1; x < 2; x++) {
+                  for (int8_t y = -1; y < 2; y++) {
+                    display.drawLine(shipList[z].XPoints[0][0] + x, shipList[z].YPoints[0][0] + y, (int16_t) (shipList[z].XPoints[0][0] + sin(shipList[z].dir) * 142) + x, (uint16_t) (shipList[z].YPoints[0][0] + cos(shipList[z].dir) * 142) + y, WHITE);
+                  }
+                }
+                display.display();
+                for (uint8_t i = 0; i <= 142; i++) {
+                  if (shipList[-z + 1].pointInShip(shipList[z].XPoints[0][0] + sin(shipList[z].dir) * i, shipList[z].YPoints[0][0] + cos(shipList[z].dir) * i)) { //game won and over
+                    win = 1;
+                    winner = !z;
+                  }
+                }
+              }
+              shipList[z].power = 0;
+            } else {
+              laserList[z][i].setUp(shipList[z].dir, shipList[z].X + sin(shipList[z].dir) * 3, shipList[z].Y + cos(shipList[z].dir) * 3, shipList[z].XVelocity, shipList[z].YVelocity);
+              laserButtonTiming[z] = millis();
+            }
           }
           if (laserList[z][i].readyToMove()) {
             laserList[z][i].moveAndDisplay(display);
@@ -388,6 +429,16 @@ void setup() {
                     if (asteroidList[i].pointInAsteroid(laserList[z][m].X + n, laserList[z][m].Y + o)) {
                       laserList[z][m].hit = true;
                       if (asteroidList[i].hit(laserList[z][m].dir)) {
+                        uint8_t power = random(1, 3);
+                        textDisplayNum = power - 1;
+                        textDisplay = millis();
+                        if (power == 1) {
+                          turnDir = !turnDir;
+                        } else if (power > 1) {
+                          shipList[z].power = power;
+                        }
+                      }
+                      if (asteroidList[i].Size == 8) {
                         uint8_t l;
                         for (l = 0; asteroidList[l].Size != 0; l++) {}
                         asteroidList[l].Size = 8;
@@ -409,26 +460,35 @@ void setup() {
             for (uint8_t j = 0; j < 2; j++) { //every point...
               for (uint8_t k = 0; k < 2; k++) { //...on each laser
                 if (shipList[z].pointInShip(laserList[-z + 1][i].X, laserList[-z + 1][i].Y)) { //game won and over
-                  display.display();
-                  delay(1000);
-                  display.fillRect(28, 22, 14, 16, BLACK);
-                  if (z) display.drawTriangle(35, 24, 30, 36, 40, 36, WHITE);
-                  else display.fillTriangle(35, 24, 30, 36, 40, 36, WHITE);
-                  display.setCursor(44, 24);
-                  display.setTextSize(2);
-                  display.print(" Wins");
-                  display.display();
-                  delay(500);
-                  waitAnyClick();
-                  delay(500);
-                  digitalWrite(6, LOW);
+                  win = 1;
+                  winner = z;
                 }
               }
             }
           }
         }
       }
+      if (millis() - textDisplay < 500) {
+        display.setCursor((128 - powers[textDisplayNum].length() * 12) / 2, 24);
+        display.setTextSize(2);
+        display.print(powers[textDisplayNum]);
+      }
       display.display();
+      if (win) {
+        display.display();
+        delay(1000);
+        display.fillRect(26, 21, 18, 19, BLACK);
+        if (winner) display.drawTriangle(35, 24, 30, 36, 40, 36, WHITE);
+        else display.fillTriangle(35, 24, 30, 36, 40, 36, WHITE);
+        display.setCursor(44, 24);
+        display.setTextSize(2);
+        display.print(" Wins");
+        display.display();
+        delay(500);
+        waitAnyClick();
+        delay(500);
+        digitalWrite(6, LOW);
+      }
       while (millis() - generalTimer < 40) {} //regulate to 25 fps
       generalTimer = millis();
     }

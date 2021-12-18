@@ -22,14 +22,11 @@ ship::ship(float setX, float setY, float setDir, bool setColor) {
   dir = setDir;
   color = setColor;
 }
-void ship::CWTurn() {
-  dir += M_PI / 8;
+void ship::turn(bool CW) {
+  dir += (CW ? 1 : -1) * M_PI / 8;
 }
-void ship::CCWTurn() {
-  dir -= M_PI / 8;
-}
-void ship::CWBoost() {
-  dir += M_PI / 2 - M_PI / 8;
+void ship::boost(bool CW) {
+  dir += (CW ? 1 : -1) * (3 * M_PI / 8);
   XVelocity += sin(dir) * 4;
   YVelocity += cos(dir) * 4;
 }
@@ -55,9 +52,15 @@ void ship::moveAndDisplay(bool changePos, bool lasersReadyToShoot[2], Adafruit_S
       }
     }
   }
+  if (power and millis() - flash >= 500) {
+    flash = millis();
+  }
   for (uint8_t i = 0; i < 3; i++) { //display ship triangles
-    if (color) display.fillTriangle(XPoints[0][i], YPoints[0][i], XPoints[1][i], YPoints[1][i], XPoints[2][i], YPoints[2][i], WHITE);
-    else display.drawTriangle(XPoints[0][i], YPoints[0][i], XPoints[1][i], YPoints[1][i], XPoints[2][i], YPoints[2][i], WHITE);
+    if (color xor (power and millis() - flash >= 250)) {
+      display.fillTriangle(XPoints[0][i], YPoints[0][i], XPoints[1][i], YPoints[1][i], XPoints[2][i], YPoints[2][i], WHITE);
+    } else {
+      display.drawTriangle(XPoints[0][i], YPoints[0][i], XPoints[1][i], YPoints[1][i], XPoints[2][i], YPoints[2][i], WHITE);
+    }
     if (changePos) {
       display.drawLine(.33 * XPoints[2][i] + .66 * XPoints[1][i], .33 * YPoints[2][i] + .66 * YPoints[1][i], (XPoints[1][i] + XPoints[2][i]) / 2 - sin(dir) * 5, (YPoints[1][i] + YPoints[2][i]) / 2 - cos(dir) * 5, WHITE);
       display.drawLine(.66 * XPoints[2][i] + .33 * XPoints[1][i], .66 * YPoints[2][i] + .33 * YPoints[1][i], (XPoints[1][i] + XPoints[2][i]) / 2 - sin(dir) * 5, (YPoints[1][i] + YPoints[2][i]) / 2 - cos(dir) * 5, WHITE);
@@ -81,33 +84,42 @@ bool ship::pointInShip(uint8_t XGiven, uint8_t YGiven) {
 /*Asteroid Methods*/
 
 asteroid::asteroid() {}
-asteroid::asteroid(uint8_t setSize, bool fullscreen) {
+asteroid::asteroid(uint8_t setSize, bool setPower, bool fullscreen) {
   Size = setSize;
   if (setSize != 0) {
     dir = random(0, 629) / 100.0; //random dir
     if (fullscreen) X = random(0, 128); //random anywhere
     else X = random(96, 160 - setSize) % 128; //random avoiding center
     Y = random(0, 64);
+    power = setPower;
   }
 }
-bool asteroid::hit(float hitDir) {
+uint8_t asteroid::hit(float hitDir) {
+  uint8_t tempPower = power;
   if (Size == 16) { //split the asteroid if it's big
     Size = 8;
     dir = (hitDir + dir) / 2;
-    return 1;
+    power = 0;
   } else { //remove asteroid
     Size = 0;
-    return 0;
   }
+  return tempPower;
 }
 void asteroid::moveAndDisplay(Adafruit_SSD1306& display) {
   if (Size) {
     X = floatMod(X + sin(dir) / 2, 128); //change position
     Y = floatMod(Y + cos(dir) / 2, 64);
-    display.drawRect(X, Y, Size, Size, WHITE);
-    if (X > 128 - Size)display.drawRect(-1, Y, Size - (128 - X) + 1, Size, WHITE); //draw 2 squares if its over the edge one for each side
-    if (Y > 64 - Size)display.drawRect(X, -1, Size, Size - (64 - Y) + 1, WHITE);
-    if (X > 128 - Size and Y > 64 - Size) display.drawRect(-1, -1, Size - (128 - X) + 1, Size - (64 - Y) + 1, WHITE); //draw 4 squares if its over both edges one for each side
+    if (power) {
+      display.fillRect(X, Y, Size, Size, WHITE);
+      if (X > 128 - Size)display.fillRect(-1, Y, Size - (128 - X) + 1, Size, WHITE); //draw 2 squares if its over the edge one for each side
+      if (Y > 64 - Size)display.fillRect(X, -1, Size, Size - (64 - Y) + 1, WHITE);
+      if (X > 128 - Size and Y > 64 - Size) display.fillRect(-1, -1, Size - (128 - X) + 1, Size - (64 - Y) + 1, WHITE); //draw 4 squares if its over both edges one for each side
+    } else {
+      display.drawRect(X, Y, Size, Size, WHITE);
+      if (X > 128 - Size)display.drawRect(-1, Y, Size - (128 - X) + 1, Size, WHITE);
+      if (Y > 64 - Size)display.drawRect(X, -1, Size, Size - (64 - Y) + 1, WHITE);
+      if (X > 128 - Size and Y > 64 - Size) display.drawRect(-1, -1, Size - (128 - X) + 1, Size - (64 - Y) + 1, WHITE);
+    }
   }
 }
 bool asteroid::pointInAsteroid(uint8_t XGiven, uint8_t YGiven) { //point in square
