@@ -91,7 +91,7 @@ void setup() {
     }
     for (uint8_t z = 0; z < 2; z++) { //z is used to diferentiate between ships
       if (millis() - shipTurnTiming[z] >= 50) { //turning
-        if (digitalRead(-3 * z + 5)) {
+        if (digitalRead(-3 * z + 5) == 0) {
           if (millis() - lastNoTurn[z] <= 80 and millis() - lastTurn[z] <= 280 and millis() - secondLastNoTurn[z] <= 280) {
             shipList[z].boost(turnDir);
           } else {
@@ -106,7 +106,7 @@ void setup() {
       }
       shipList[z].moveAndDisplay(1, new bool[2] {laserList[z][0].readyToShoot(), laserList[z][1].readyToShoot()}, display); //always moving
       for (uint8_t i = 0; i < 2; i++) { //shoot laser on button press
-        if (digitalRead(-z + 4) and laserList[z][i].readyToShoot() and millis() - laserButtonTiming[z] > 100) {
+        if (digitalRead(-z + 4) == 0 and laserList[z][i].readyToShoot() and millis() - laserButtonTiming[z] > 100) {
           if (shipList[z].power) {
             if (shipList[z].power == 2) {
               for (int8_t x = -1; x < 2; x++) {
@@ -199,7 +199,7 @@ void setup() {
       delay(500);
       waitAnyClick();
       delay(500);
-      digitalWrite(6, LOW);
+      resetFunc();
     }
     while (millis() - generalTimer < 40) {} //regulate to 25 fps
     generalTimer = millis();
