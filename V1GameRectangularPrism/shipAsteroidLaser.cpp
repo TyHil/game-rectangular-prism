@@ -22,8 +22,8 @@ ship::ship(float setX, float setY, float setDir, bool setColor) {
   dir = setDir;
   color = setColor;
 }
-void ship::turn(bool CW) {
-  dir += (CW ? 1 : -1) * M_PI / 8;
+void ship::turn(float amount) {
+  dir += amount;
 }
 void ship::boost(bool CW) {
   dir += (CW ? 1 : -1) * (3 * M_PI / 8);

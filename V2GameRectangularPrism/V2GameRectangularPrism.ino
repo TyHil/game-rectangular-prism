@@ -44,6 +44,9 @@ void updateEEPROM(unsigned int location, byte data) { //update the value of a sp
     delay(5);
   }
 }
+
+/*Asteroids Functions*/
+
 void high() { //displays list of high scores for Asteroids
   display.setTextSize(1); //top row text
   display.setCursor(30, 0);
@@ -121,25 +124,37 @@ void newhigh(int8_t level, uint8_t score) { //sets a new high score for Asteroid
 /*Game Selection Functions*/
 
 void gameChangerDisplay() { //displays menu to change between different games
-  const String names[7] = {"Switch Game", "Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Number", "Level"}; //game names
+  const String names[8] = {"Switch Game", "Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Num", "Level", "Temp"}; //game names
   display.setTextSize(1);
-  for (uint8_t i = 0; i < 7; i++) { //game list
-    display.setCursor(30, 9 * i);
+  for (uint8_t i = 0; i < 8; i++) { //game list
+    display.setCursor((i == 0) ? 30 : ((i < 7) ? 1 : 68), (i == 0) ? 0 : (9 * ((i - 1) % 6) + 9));
     display.print(names[i]);
   }
-  display.fillRect(0, 9 * (game + 1) - 1, 128, 9, WHITE); //highlight current selection
-  display.setCursor(30, 9 * (game + 1));
+  display.fillRect((game < 6) ? 0 : 67, 9 * (game % 6 + 1) - 1, 67, 9, WHITE); //highlight current selection
+  display.setCursor((game < 6) ? 1 : 68, 9 * (game % 6 + 1));
   display.setTextColor(BLACK);
   display.print(names[game + 1]);
   display.setTextColor(WHITE);
 }
 void gameChanger() { //update game selection and restart arduino on choice
   if (digitalRead(5)) {
-    game = (game + 1) % 6;
+    game = (game + 1) % 7;
     disp = true;
   } else if (digitalRead(2) or digitalRead(3)) {
     updateEEPROM(25, game);
     digitalWrite(6, LOW);
+  }
+}
+
+/*IMU Functions*/
+
+float getPitch() {
+  if (IMU.accelerationAvailable()) {
+    float accelX, accelY, accelZ;
+    IMU.readAcceleration(accelX, accelY, accelZ);
+    return accelX / sqrt(accelY * accelY + accelZ * accelZ); //slope of level line
+  } else {
+    return 0;
   }
 }
 
@@ -165,14 +180,27 @@ void setup() {
   if (game == 0) {
     int8_t level = 1;
     unsigned long generalTimer;
+    bool tiltToTurn = 0;
 
     /*Setup*/
-    while ((digitalRead(2) == 0 and digitalRead(3) == 0) or level == 0 or level == -1) { //menu and level choice
+    while ((digitalRead(2) == 0 and digitalRead(3) == 0) or level == 0 or level == -1 or level == -2) { //menu and level choice
       if (disp) { //only display if something changes
         disp = false;
         display.clearDisplay();
-        if (level == 0) high(); //highscores
-        else if (level == -1) gameChangerDisplay(); //game selection
+        if (level == -1) high(); //highscores
+        else if (level == -2) gameChangerDisplay(); //game selection
+        else if (level == 0) { //game selection
+          display.setTextSize(1); //top row text
+          display.setCursor(40, 0);
+          display.print("Settings");
+          if (tiltToTurn) {
+            display.fillRect(0, 8, 9, 9, WHITE);
+          } else {
+            display.drawRect(0, 8, 9, 9, WHITE);
+          }
+          display.setCursor(12, 9);
+          display.print("Tilt to turn");
+        }
         else { //level choice
           display.setTextSize(2);
           display.setCursor(40, 0);
@@ -188,15 +216,19 @@ void setup() {
         display.display();
       }
       if (millis() - generalTimer >= 100) {
-        if (level != -1 and digitalRead(5)) {
-          level = max(level - 1, -1);
+        if (level != -2 and digitalRead(5)) {
+          level = max(level - 1, -2);
           generalTimer = millis();
           disp = true;
         } else if (digitalRead(4)) {
           level = min(level + 1, 20);
           generalTimer = millis();
           disp = true;
-        } else if (level == -1) gameChanger();
+        } else if (level == 0 and (digitalRead(2) or digitalRead(3))) {
+          tiltToTurn = !tiltToTurn;
+          generalTimer = millis();
+          disp = true;
+        } else if (level == -2) gameChanger();
       }
       delay(50);
     }
@@ -210,17 +242,30 @@ void setup() {
     for (uint8_t i = 2; i < level + 2; i++) asteroidList[i] = asteroid(16, 0, 0);
     for (uint8_t i = level + 2; i < 2 * (level + 1); i++) asteroidList[i] = asteroid(0, 0, 0);
     unsigned long laserButtonTiming, shipTurnTiming, scoreTime = millis(); //timer for button presses and score
+    float pitchCorrection;
+    if (tiltToTurn) {
+      IMU.begin();
+      pitchCorrection = getPitch();
+    }
 
     /*Game*/
     while (true) {
       display.clearDisplay();
-      if (millis() - shipTurnTiming >= 50) { //turning
-        if (digitalRead(5)) {
-          Ship.turn(1);
+      if (millis() - shipTurnTiming >= 50) {
+        if (tiltToTurn) { //turning
+          int8_t angle = atan(getPitch() - pitchCorrection) * 180 / M_PI; //degrees
+          if (angle > 2 or angle < -2) {
+            Ship.turn((M_PI * min(angle, 20)) / (8 * 20));
+          }
           shipTurnTiming = millis();
-        } else if (digitalRead(4)) {
-          Ship.turn(0);
-          shipTurnTiming = millis();
+        } else {
+          if (digitalRead(5)) {
+            Ship.turn(M_PI / 8);
+            shipTurnTiming = millis();
+          } else if (digitalRead(4)) {
+            Ship.turn(M_PI / -8);
+            shipTurnTiming = millis();
+          }
         }
       }
       Ship.moveAndDisplay(digitalRead(2), new bool[2] {laserList[0].readyToShoot(), laserList[1].readyToShoot()}, display); //only move if button pressed
@@ -228,7 +273,7 @@ void setup() {
         asteroidList[i].moveAndDisplay(display);
       }
       for (uint8_t i = 0; i < 2; i++) { //shoot laser on button press
-        if (digitalRead(3) and laserList[i].readyToShoot() and millis() - laserButtonTiming > 100) {
+        if (digitalRead(tiltToTurn ? 5 : 3) and laserList[i].readyToShoot() and millis() - laserButtonTiming > 100) {
           laserList[i].setUp(Ship.dir, Ship.X + sin(Ship.dir) * 3, Ship.Y + cos(Ship.dir) * 3, Ship.XVelocity, Ship.YVelocity); //from tip of ship with additionall ship velocity added
           laserButtonTiming = millis();
         }
@@ -383,7 +428,7 @@ void setup() {
             if (millis() - lastNoTurn[z] <= 80 and millis() - lastTurn[z] <= 280 and millis() - secondLastNoTurn[z] <= 280) {
               shipList[z].boost(turnDir);
             } else {
-              shipList[z].turn(turnDir);
+              shipList[z].turn(turnDir ? M_PI / 8 : M_PI / -8);
               lastTurn[z] = millis();
               secondLastNoTurn[z] = lastNoTurn[z];
             }
@@ -901,9 +946,7 @@ void setup() {
     while (true) {
       if (level and IMU.accelerationAvailable()) {
         display.clearDisplay();
-        float accelX, accelY, accelZ;
-        IMU.readAcceleration(accelX, accelY, accelZ);
-        pitch = accelX / sqrt(accelY * accelY + accelZ * accelZ); //slope of level line
+        pitch = getPitch();
         int8_t angle = atan(pitch - pitchCorrection) * 180 / M_PI; //degrees
         display.setTextSize(4);
         display.setCursor(64 - 10 * String(angle).length() - 2 * (String(angle).length() - 1), 16);
@@ -939,6 +982,25 @@ void setup() {
     }
   }
 
+  /*Blank*/
+
+  else if (game == 6) {
+    unsigned long generalTimer;
+    while (true) {
+      if (disp) {
+        disp = false;
+        display.clearDisplay();
+        gameChangerDisplay();
+        display.display();
+      }
+      if (millis() - generalTimer >= 100) {
+        gameChanger();
+        generalTimer = millis();
+      }
+      delay(50);
+    }
+  }
+
   /*Game Unknown*/
 
   else {
@@ -954,6 +1016,7 @@ void setup() {
         gameChanger();
         generalTimer = millis();
       }
+      delay(50);
     }
   }
 }

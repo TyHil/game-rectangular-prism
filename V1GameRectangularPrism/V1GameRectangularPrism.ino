@@ -95,7 +95,7 @@ void setup() {
           if (millis() - lastNoTurn[z] <= 80 and millis() - lastTurn[z] <= 280 and millis() - secondLastNoTurn[z] <= 280) {
             shipList[z].boost(turnDir);
           } else {
-            shipList[z].turn(turnDir);
+            shipList[z].turn(turnDir ? M_PI / 8 : M_PI / -8);
             lastTurn[z] = millis();
             secondLastNoTurn[z] = lastNoTurn[z];
           }
