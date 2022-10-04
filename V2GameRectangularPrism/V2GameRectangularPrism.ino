@@ -9,6 +9,7 @@
 */
 #include "shipAsteroidLaser.h"
 #include "boards.h"
+#include "firework.h"
 #include <Arduino_LSM6DS3.h>
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 uint8_t game; //which game is being played
@@ -124,7 +125,7 @@ void newhigh(int8_t level, uint8_t score) { //sets a new high score for Asteroid
 /*Game Selection Functions*/
 
 void gameChangerDisplay() { //displays menu to change between different games
-  const String names[8] = {"Switch Game", "Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Num", "Level", "Temp"}; //game names
+  const String names[8] = {"Switch Game", "Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Num", "Level", "Fireworks"}; //game names
   display.setTextSize(1);
   for (uint8_t i = 0; i < 8; i++) { //game list
     display.setCursor((i == 0) ? 30 : ((i < 7) ? 1 : 68), (i == 0) ? 0 : (9 * ((i - 1) % 6) + 9));
@@ -982,20 +983,48 @@ void setup() {
     }
   }
 
-  /*Blank*/
+  /*Fireworks*/
 
   else if (game == 6) {
-    unsigned long generalTimer;
+    int8_t level = 1;
+    unsigned long generalTimer, betweenTimer;
+    uint8_t betweenDur = 0;
+    firework fireworks[10];// = firework(random(0, 128), random(0, 64));
+    for (uint8_t i = 0; i < 10; i++) {
+      fireworks[i] = firework();
+    }
     while (true) {
-      if (disp) {
+      if (level) {
+        display.clearDisplay();
+        if (millis() - betweenTimer >= betweenDur * 10) {
+          uint8_t i;
+          for(i = 0; i < 10 and !fireworks[i].offScreen; i++) {}
+          if (i < 10) {
+            fireworks[i].reset();
+          }
+          betweenDur = random(0, 50);
+          betweenTimer = millis();
+        }
+        for (uint8_t i = 0; i < 10; i++) {
+          fireworks[i].moveAndDisplay(display);
+        }
+        display.display();
+      } else if (disp) {
         disp = false;
         display.clearDisplay();
         gameChangerDisplay();
         display.display();
       }
+      if (!level) gameChanger();
       if (millis() - generalTimer >= 100) {
-        gameChanger();
-        generalTimer = millis();
+        if (digitalRead(4)) { //level
+          level = 1;
+          generalTimer = millis();
+        } else if (digitalRead(5)) { //game selection
+          level = 0;
+          generalTimer = millis();
+          disp = true;
+        }
       }
       delay(50);
     }
