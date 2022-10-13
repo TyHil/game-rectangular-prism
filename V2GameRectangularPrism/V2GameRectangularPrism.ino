@@ -998,7 +998,7 @@ void setup() {
         display.clearDisplay();
         if (millis() - betweenTimer >= betweenDur * 10) {
           uint8_t i;
-          for(i = 0; i < 10 and !fireworks[i].offScreen; i++) {}
+          for (i = 0; i < 10 and !fireworks[i].offScreen; i++) {}
           if (i < 10) {
             fireworks[i].reset();
           }
@@ -1033,7 +1033,7 @@ void setup() {
   /*Game Unknown*/
 
   else {
-    unsigned long generalTimer;
+    game = (game + 1) % 7;
     while (true) {
       if (disp) {
         disp = false;
@@ -1041,10 +1041,7 @@ void setup() {
         gameChangerDisplay();
         display.display();
       }
-      if (millis() - generalTimer >= 100) {
-        gameChanger();
-        generalTimer = millis();
-      }
+      gameChanger();
       delay(50);
     }
   }
