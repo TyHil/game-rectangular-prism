@@ -6,34 +6,34 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-class ship {
+class Ship {
   public:
     float X, Y, dir, dirV, XVelocity = 0, YVelocity = 0; //position, direction, rotaion velocity, movement velocities
     int16_t XPoints[3][3], YPoints[3][3]; //Points of 3 ship triangles
     uint8_t power = 0;
     unsigned long flash;
     bool color;
-    ship();
-    ship(float setX, float setY, float setDir, bool setColor);
+    Ship();
+    Ship(float setX, float setY, float setDir, bool setColor);
     void turn(float amount);
     void boost(bool CW);
     void moveAndDisplay(bool changePos, bool lasersReadyToShoot[2], Adafruit_SSD1306& display);
     bool pointInShip(uint8_t XPoint, uint8_t YPoint);
 };
 
-class asteroid {
+class Asteroid {
   public:
     float X, Y, dir; //position, direction
     uint8_t Size; //size
     bool power; //powerup
-    asteroid();
-    asteroid(uint8_t setSize, bool setPower, bool fullscreen);
+    Asteroid();
+    Asteroid(uint8_t setSize, bool setPower, bool fullscreen);
     uint8_t hit(float hitDir);
     void moveAndDisplay(Adafruit_SSD1306& display);
     bool pointInAsteroid(uint8_t XPoint, uint8_t YPoint);
 };
 
-class laser {
+class Laser {
   public:
     float dir, XVelocity, YVelocity; //direction, velocity
     uint8_t X, Y; //position

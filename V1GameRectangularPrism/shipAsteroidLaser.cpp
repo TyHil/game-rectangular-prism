@@ -4,33 +4,50 @@
 */
 #include "shipAsteroidLaser.h"
 
-/*Functions*/
 
-float floatMod(float val, int mod) { //modulus for floating point numbers
-  return (val > 0) * (val - mod * (int) (val / mod)) + (val < 0) * (val + mod * (int) (-1 * val / mod + 1));
+
+/* General */
+
+//modulus for floating point numbers
+float floatMod(float val, int mod) {
+  if (val > 0) {
+    return val - mod * (int) (val / mod);
+  }
+  if (val < 0) {
+    return val + mod * (int) (-1 * val / mod + 1);
+  }
+  return 0;
 }
-float area(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3) { //Calculates the area of a triangle for laser ship collision detection
+
+//Calculates the area of a triangle for laser ship collision detection
+float area(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y3) {
   return abs((x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2.0);
 }
 
-/*Ship Methods*/
 
-ship::ship() {}
-ship::ship(float setX, float setY, float setDir, bool setColor) {
+
+/* Ship */
+
+Ship::Ship() {}
+
+Ship::Ship(float setX, float setY, float setDir, bool setColor) {
   X = setX;
   Y = setY;
   dir = setDir;
   color = setColor;
 }
-void ship::turn(float amount) {
+
+void Ship::turn(float amount) {
   dir += amount;
 }
-void ship::boost(bool CW) {
+
+void Ship::boost(bool CW) {
   dir += (CW ? 1 : -1) * (3 * M_PI / 8);
   XVelocity += sin(dir) * 4;
   YVelocity += cos(dir) * 4;
 }
-void ship::moveAndDisplay(bool changePos, bool lasersReadyToShoot[2], Adafruit_SSD1306& display) {
+
+void Ship::moveAndDisplay(bool changePos, bool lasersReadyToShoot[2], Adafruit_SSD1306& display) {
   if (changePos) {
     XVelocity += sin(dir) / 2;
     YVelocity += cos(dir) / 2;
@@ -71,7 +88,8 @@ void ship::moveAndDisplay(bool changePos, bool lasersReadyToShoot[2], Adafruit_S
   }
   delete lasersReadyToShoot;
 }
-bool ship::pointInShip(uint8_t XGiven, uint8_t YGiven) {
+
+bool Ship::pointInShip(uint8_t XGiven, uint8_t YGiven) {
   bool hit = 0;
   for (uint8_t i = 0; i < 3; i++) {
     float sum = 0;
@@ -81,10 +99,13 @@ bool ship::pointInShip(uint8_t XGiven, uint8_t YGiven) {
   return hit;
 }
 
-/*Asteroid Methods*/
 
-asteroid::asteroid() {}
-asteroid::asteroid(uint8_t setSize, bool setPower, bool fullscreen) {
+
+/* Asteroid */
+
+Asteroid::Asteroid() {}
+
+Asteroid::Asteroid(uint8_t setSize, bool setPower, bool fullscreen) {
   Size = setSize;
   if (setSize != 0) {
     dir = random(0, 629) / 100.0; //random dir
@@ -94,7 +115,8 @@ asteroid::asteroid(uint8_t setSize, bool setPower, bool fullscreen) {
     power = setPower;
   }
 }
-uint8_t asteroid::hit(float hitDir) {
+
+uint8_t Asteroid::hit(float hitDir) {
   uint8_t tempPower = power;
   if (Size == 16) { //split the asteroid if it's big
     Size = 8;
@@ -105,7 +127,8 @@ uint8_t asteroid::hit(float hitDir) {
   }
   return tempPower;
 }
-void asteroid::moveAndDisplay(Adafruit_SSD1306& display) {
+
+void Asteroid::moveAndDisplay(Adafruit_SSD1306& display) {
   if (Size) {
     X = floatMod(X + sin(dir) / 2, 128); //change position
     Y = floatMod(Y + cos(dir) / 2, 64);
@@ -122,13 +145,17 @@ void asteroid::moveAndDisplay(Adafruit_SSD1306& display) {
     }
   }
 }
-bool asteroid::pointInAsteroid(uint8_t XGiven, uint8_t YGiven) { //point in square
+
+//point in square
+bool Asteroid::pointInAsteroid(uint8_t XGiven, uint8_t YGiven) {
   return ((X + Size > 128 and (XGiven >= 0 and XGiven < (uint8_t) (X + Size) % 128 or XGiven >= X and XGiven < 128) or X + Size <= 128 and (XGiven >= X and XGiven < X + Size)) and/*big and between X and Y*/ (Y + Size > 64 and (YGiven >= 0 and YGiven < (uint8_t) (Y + Size) % 64 or YGiven >= Y and YGiven < 64) or Y + Size <= 64 and (YGiven >= Y and YGiven < Y + Size)));
 }
 
-/*Laser Methods*/
 
-void laser::setUp(float setDir, uint8_t setX, uint8_t setY, float setXVelocity, float setYVelocity) {
+
+/* Laser */
+
+void Laser::setUp(float setDir, uint8_t setX, uint8_t setY, float setXVelocity, float setYVelocity) {
   dir = setDir;
   Time = millis();
   hit = false;
@@ -138,15 +165,19 @@ void laser::setUp(float setDir, uint8_t setX, uint8_t setY, float setXVelocity, 
   YDist = 0;
   XVelocity = setXVelocity;
   YVelocity = setYVelocity;
-
 }
-bool laser::readyToShoot() { //ready to shoot every second
+
+//ready to shoot every second
+bool Laser::readyToShoot() {
   return millis() - Time > 1000;
 }
-bool laser::readyToMove() { //ready to move when unhit and travelled less than 64 pixels
+
+//ready to move when unhit and travelled less than 64 pixels
+bool Laser::readyToMove() {
   return !hit and sqrt(pow(XDist, 2) + pow(YDist, 2)) <= 64;
 }
-void laser::moveAndDisplay(Adafruit_SSD1306& display) {
+
+void Laser::moveAndDisplay(Adafruit_SSD1306& display) {
   X = (uint8_t) (X + sin(dir) * 5 + XVelocity) % 128; //move laser
   Y = (uint8_t) (Y + cos(dir) * 5 + YVelocity) % 64;
   XDist = (int8_t) (XDist + sin(dir) * 5); //move limit for how far it can go

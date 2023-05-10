@@ -4,7 +4,9 @@
 */
 #include "boards.h"
 
-/*Functions*/
+/* General */
+
+
 
 void grid(uint8_t XDim, uint8_t YDim, Adafruit_SSD1306& display) { //draw grid for Clonium or Minesweeper
   const boolean area = XDim > 8 or YDim > 4;
@@ -14,9 +16,11 @@ void grid(uint8_t XDim, uint8_t YDim, Adafruit_SSD1306& display) { //draw grid f
   if (YDim % 4 == 0) display.drawLine(0, 63, XDim * (-8 * area + 16), 63, WHITE); //bottom line
 }
 
-/*Clonium Board Methods*/
 
-cloniumBoard::cloniumBoard(uint8_t setXDim, uint8_t setYDim) {
+
+/* Clonium Board */
+
+CloniumBoard::CloniumBoard(uint8_t setXDim, uint8_t setYDim) {
   data = new uint8_t*[setXDim];
   loopPrevention = new boolean*[setXDim];
   for (uint8_t i = 0; i < setXDim; i++) {
@@ -33,22 +37,28 @@ cloniumBoard::cloniumBoard(uint8_t setXDim, uint8_t setYDim) {
   data[min(spaceFromEdges, XDim - 1)][min(spaceFromEdges, YDim - 1)] = 3; //starting posistions
   data[max(XDim - 1 - spaceFromEdges, 0)][max(YDim - 1 - spaceFromEdges, 0)] = 10;
 }
-cloniumBoard::~cloniumBoard() {
+
+CloniumBoard::~CloniumBoard() {
   for (uint8_t i = 0; i < XDim; i++) {
     delete[] data[i];
   }
   delete[] data;
 }
-uint8_t cloniumBoard::getTeam(uint8_t x, uint8_t y) {
+
+uint8_t CloniumBoard::getTeam(uint8_t x, uint8_t y) {
   return (data[x][y] > 0) + (data[x][y] > 7);
 }
-uint8_t cloniumBoard::getDots(uint8_t x, uint8_t y) {
+
+uint8_t CloniumBoard::getDots(uint8_t x, uint8_t y) {
   return (data[x][y] - 1) % 7 + 1;
 }
-void cloniumBoard::drawSelection(uint8_t x, uint8_t y, boolean flash, Adafruit_SSD1306& display) { //displays a box around currently selected square
+
+//displays a box around currently selected square
+void CloniumBoard::drawSelection(uint8_t x, uint8_t y, boolean flash, Adafruit_SSD1306& display) {
   display.drawRect(x * sixteenOverArea + 1, y * sixteenOverArea + 1, fourteenOverArea + (x != 8 * (area + 1) - 1), fourteenOverArea + (y != 4 * (area + 1) - 1), flash xor getTeam(x, y) != 1); //flash selection choice like a cursor blinks
 }
-void cloniumBoard::draw(Adafruit_SSD1306& display) {
+
+void CloniumBoard::draw(Adafruit_SSD1306& display) {
   display.clearDisplay();
   grid(XDim, YDim, display); //draw grid
   for (uint8_t x = 0; x < XDim; x++) { //dots
@@ -62,7 +72,8 @@ void cloniumBoard::draw(Adafruit_SSD1306& display) {
     }
   }
 }
-uint8_t cloniumBoard::numNextToNumBonus(uint8_t x, uint8_t y, uint8_t nextTo, int8_t bonus, uint8_t turn, uint8_t lastDir) {
+
+uint8_t CloniumBoard::numNextToNumBonus(uint8_t x, uint8_t y, uint8_t nextTo, int8_t bonus, uint8_t turn, uint8_t lastDir) {
   uint8_t c = 0;
   if (y != YDim - 1 and getDots(x, y + 1) == nextTo and lastDir != 1 and getTeam(x, y + 1) - 1 != turn) c += bonus; //bonus for putting a 2 next to an enemy's 1
   if (x != XDim - 1 and getDots(x + 1, y) == nextTo and lastDir != 3 and getTeam(x + 1, y) - 1 != turn) c += bonus;
@@ -70,7 +81,8 @@ uint8_t cloniumBoard::numNextToNumBonus(uint8_t x, uint8_t y, uint8_t nextTo, in
   if (x != 0 and getDots(x - 1, y) == nextTo and lastDir != 4 and getTeam(x - 1, y) - 1 != turn) c += bonus;
   return c;
 }
-uint8_t cloniumBoard::recursiveEval(uint8_t x, uint8_t y, uint8_t lastDir, uint8_t turn) {
+
+uint8_t CloniumBoard::recursiveEval(uint8_t x, uint8_t y, uint8_t lastDir, uint8_t turn) {
   if (loopPrevention[x][y]) return 0; //stop a looping situation like a square of 3s
   else {
     loopPrevention[x][y] = 1;
@@ -95,7 +107,8 @@ uint8_t cloniumBoard::recursiveEval(uint8_t x, uint8_t y, uint8_t lastDir, uint8
     return c;
   }
 }
-void cloniumBoard::CPUMove(uint8_t turn, Adafruit_SSD1306& display) {
+
+void CloniumBoard::CPUMove(uint8_t turn, Adafruit_SSD1306& display) {
   int8_t c, fc = -128; //evaluation variables
   boolean f[XDim][YDim];
   for (uint8_t i = 0; i < XDim; i++) for (uint8_t j = 0; j < YDim; j++) f[i][j] = 0;
@@ -127,7 +140,8 @@ void cloniumBoard::CPUMove(uint8_t turn, Adafruit_SSD1306& display) {
   delay(200);
   mover(rx, ry, turn);
 }
-void cloniumBoard::mover(uint8_t x, uint8_t y, uint8_t turn) {
+
+void CloniumBoard::mover(uint8_t x, uint8_t y, uint8_t turn) {
   if (getDots(x, y) < 3) { //add 1 to places
     data[x][y]++;
     data[x][y] = getDots(x, y) + turn * 7; //capture
@@ -142,9 +156,11 @@ void cloniumBoard::mover(uint8_t x, uint8_t y, uint8_t turn) {
   }
 }
 
-/*Minesweeper Board Methods*/
 
-minesweeperBoard::minesweeperBoard(uint8_t setXDim, uint8_t setYDim, uint8_t setMines) {
+
+/* Minesweeper Board */
+
+MinesweeperBoard::MinesweeperBoard(uint8_t setXDim, uint8_t setYDim, uint8_t setMines) {
   data = new uint8_t*[setXDim];
   loopPrevention = new boolean*[setXDim];
   for (uint8_t i = 0; i < setXDim; i++) {
@@ -159,13 +175,15 @@ minesweeperBoard::minesweeperBoard(uint8_t setXDim, uint8_t setYDim, uint8_t set
   fourteenOverArea = 14 / (area + 1) - (area + 1) + 1;
   for (uint8_t x = 0; x < XDim; x++) for (uint8_t y = 0; y < YDim; y++) data[x][y] = 9; //set all to 9 which is unknown
 }
-minesweeperBoard::~minesweeperBoard() {
+
+MinesweeperBoard::~MinesweeperBoard() {
   for (uint8_t i = 0; i < XDim; i++) {
     delete[] data[i];
   }
   delete[] data;
 }
-void minesweeperBoard::generateMines(uint8_t mx, uint8_t my) {
+
+void MinesweeperBoard::generateMines(uint8_t mx, uint8_t my) {
   uint8_t currentMineCount = 0;
   while (currentMineCount < mines) {
     uint8_t x = random(0, XDim), y = random(0, YDim);
@@ -175,18 +193,21 @@ void minesweeperBoard::generateMines(uint8_t mx, uint8_t my) {
     }
   }
 }
-void minesweeperBoard::drawNumber(uint8_t x, uint8_t y, Adafruit_SSD1306& display) { //displays a number in the specified grid location if necessary
+
+void MinesweeperBoard::drawNumber(uint8_t x, uint8_t y, Adafruit_SSD1306& display) { //displays a number in the specified grid location if necessary
   if (data[x][y] < 9 and data[x][y] > 0) { //is a number to be displayed
     display.setCursor(x * sixteenOverArea + 3 - area, y * sixteenOverArea + 2 - area);
     display.setTextSize(-area + 2);
     display.print(data[x][y]);
   }
 }
-void minesweeperBoard::drawSelection(uint8_t x, uint8_t y, boolean flash, Adafruit_SSD1306& display) { //displays a box around currently selected square
+
+void MinesweeperBoard::drawSelection(uint8_t x, uint8_t y, boolean flash, Adafruit_SSD1306& display) { //displays a box around currently selected square
   display.drawRect(x * sixteenOverArea + 1, y * sixteenOverArea + 1, fourteenOverArea + (x != 8 * (area + 1) - 1), fourteenOverArea + (y != 4 * (area + 1) - 1), flash xor data[x][y] < 9); //flash selection choice like a cursor blinks
   if (flash) drawNumber(x, y, display);
 }
-void minesweeperBoard::draw(boolean drawMines, Adafruit_SSD1306& display) { //displays grid and numbers for Minesweeper
+
+void MinesweeperBoard::draw(boolean drawMines, Adafruit_SSD1306& display) { //displays grid and numbers for Minesweeper
   display.clearDisplay();
   grid(XDim, YDim, display); //draw grid
   for (uint8_t x = 0; x < XDim; x++) { //run through grid
@@ -202,7 +223,8 @@ void minesweeperBoard::draw(boolean drawMines, Adafruit_SSD1306& display) { //di
     }
   }
 }
-void minesweeperBoard::recursiveMover(uint8_t x, uint8_t y) { //make a move for Minesweeper
+
+void MinesweeperBoard::recursiveMover(uint8_t x, uint8_t y) { //make a move for Minesweeper
   if (!loopPrevention[x][y]) {
     loopPrevention[x][y] = 1;
     int8_t neighborMines = 0;
@@ -211,11 +233,13 @@ void minesweeperBoard::recursiveMover(uint8_t x, uint8_t y) { //make a move for 
     if (neighborMines == 0) for (int8_t i = max(0, x - 1); i < min(XDim, x + 2); i++) for (int8_t j = max(0, y - 1); j < min(YDim, y + 2); j++) if (data[i][j] == 9) recursiveMover(i, j); //expand to empty spaces for ease of the game
   }
 }
-void minesweeperBoard::mover(uint8_t x, uint8_t y) { //make a move for Minesweeper
+
+void MinesweeperBoard::mover(uint8_t x, uint8_t y) { //make a move for Minesweeper
   for (uint8_t i = 0; i < XDim; i++) for (uint8_t j = 0; j < YDim; j++) loopPrevention[i][j] = 0;
   recursiveMover(x, y);
 }
-boolean minesweeperBoard::winCheck() {
+
+boolean MinesweeperBoard::winCheck() {
   uint8_t discoveredSquares = 0; //found any mines that have not been flagged
   for (uint8_t x = 0; x < XDim; x++) for (uint8_t y = 0; y < YDim; y++) if (data[x][y] < 9) discoveredSquares++; //check for win
   return XDim * YDim - discoveredSquares == mines;

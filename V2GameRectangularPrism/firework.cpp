@@ -4,12 +4,15 @@
 */
 #include "firework.h"
 
-/*Spark Methods*/
 
-spark::spark() {
+
+/* Spark */
+
+Spark::Spark() {
   offScreen = 1;
 }
-void spark::reset() {
+
+void Spark::reset() {
   X = 0;
   Y = 0;
   float dir = random(0, 2 * M_PI * 100) / 100.0;
@@ -18,7 +21,8 @@ void spark::reset() {
   YVelocity = mag * sin(dir);
   offScreen = 0;
 }
-bool spark::moveAndDisplay(uint8_t fireworkX, float fireworkY, Adafruit_SSD1306& display) {
+
+bool Spark::moveAndDisplay(uint8_t fireworkX, float fireworkY, Adafruit_SSD1306& display) {
   if (offScreen) {
     return 1;
   }
@@ -33,15 +37,18 @@ bool spark::moveAndDisplay(uint8_t fireworkX, float fireworkY, Adafruit_SSD1306&
   return 0;
 }
 
-/*Firework Methods*/
 
-firework::firework() {
+
+/* Firework */
+
+Firework::Firework() {
   offScreen = 1;
   for (uint8_t i = 0; i < 30; i++) {
-    sparks[i] = spark();
+    sparks[i] = Spark();
   }
 }
-void firework::reset() {
+
+void Firework::reset() {
   X = random(0, 128);
   Y = random(0, 64);
   YVelocity = 0;
@@ -50,7 +57,8 @@ void firework::reset() {
     sparks[i].reset();
   }
 }
-void firework::moveAndDisplay(Adafruit_SSD1306& display) {
+
+void Firework::moveAndDisplay(Adafruit_SSD1306& display) {
   if (!offScreen) {
     uint8_t sparksOffScreen = 0;
     for (uint8_t i = 0; i < 30; i++) {
