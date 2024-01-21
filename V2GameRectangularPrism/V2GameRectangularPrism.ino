@@ -5,12 +5,13 @@
   touch buttons, an EEPROM module, a 9v battery, and a power switch all in a black 3D
   printed case.
   Written by Tyler Gordon Hill
-  Version 6.2
+  Version 7.0
 */
 #include "shipAsteroidLaser.h"
 #include "boards.h"
 #include "firework.h"
 #include <Arduino_LSM6DS3.h>
+#include "Adafruit_SHTC3.h"
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 uint8_t game; //which game is being played
 boolean disp = true; //limits display refreshes when nothing has changed
@@ -133,9 +134,9 @@ void newhigh(int8_t level, uint8_t score) { //sets a new high score for Asteroid
 /* Game Selection Functions */
 
 void gameChangerDisplay() { //displays menu to change between different games
-  const String names[8] = {"Switch Game", "Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Num", "Level", "Fireworks"}; //game names
+  const String names[9] = {"Switch Game", "Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Num", "Level", "Fireworks", "Temp"}; //game names
   display.setTextSize(1);
-  for (uint8_t i = 0; i < 8; i++) { //game list
+  for (uint8_t i = 0; i < 9; i++) { //game list
     display.setCursor((i == 0) ? 30 : ((i < 7) ? 1 : 68), (i == 0) ? 0 : (9 * ((i - 1) % 6) + 9));
     display.print(names[i]);
   }
@@ -147,7 +148,7 @@ void gameChangerDisplay() { //displays menu to change between different games
 }
 void gameChanger() { //update game selection and restart arduino on choice
   if (digitalRead(5)) {
-    game = (game + 1) % 7;
+    game = (game + 1) % 8;
     disp = true;
   } else if (digitalRead(2) or digitalRead(3)) {
     updateEEPROM(25, game);
@@ -1046,6 +1047,61 @@ void setup() {
         if (digitalRead(4)) { //level
           level = 1;
           generalTimer = millis();
+        } else if (digitalRead(5)) { //game selection
+          level = 0;
+          generalTimer = millis();
+          disp = true;
+        }
+      }
+      delay(50);
+    }
+  }
+  
+
+
+  /*Thermometer*/
+
+  else if (game == 7) {
+    int8_t level = 1;
+    unsigned long generalTimer, tempTimer;
+    Adafruit_SHTC3 shtc3 = Adafruit_SHTC3();
+    shtc3.begin();
+    while (true) {
+      if (level && millis() - tempTimer >= 1000) {
+        tempTimer = millis();
+        display.clearDisplay();
+        sensors_event_t humidity, temperature;
+        shtc3.getEvent(&humidity, &temperature); //populate temp and humidity objects with fresh data
+        float fahrenheit = temperature.temperature * (9.0/5.0) + 32;
+        String tempString = String(fahrenheit, 1);
+        display.setTextSize(4);
+        display.setCursor(64 - 10 * tempString.length() - 2 * (tempString.length() - 1), 8);
+        display.print(tempString);
+        display.setTextSize(2);
+        display.setCursor(2, 48);
+        display.print(String(humidity.relative_humidity, 0) + '%');
+        //From https://meteor.geol.iastate.edu/~ckarsten/bufkit/apparent_temperature.html
+        String feelsLike = String(-42.38 + 2.049*fahrenheit + 10.14*humidity.relative_humidity + -0.2248*fahrenheit*humidity.relative_humidity + -0.006838*fahrenheit*fahrenheit + -0.05482*humidity.relative_humidity*humidity.relative_humidity + 0.001228*fahrenheit*fahrenheit*humidity.relative_humidity + 0.0008528*fahrenheit*humidity.relative_humidity*humidity.relative_humidity + -0.00000199*fahrenheit*fahrenheit*humidity.relative_humidity*humidity.relative_humidity, 1);
+        display.setCursor(128 - 10 * feelsLike.length() - 2 * (feelsLike.length() - 1) - 2, 48);
+        display.print(feelsLike);
+        for (uint8_t y = 64; y > max(0, fahrenheit / 100 * -64 + 64); y--) {
+          for (uint8_t x = 0; x < 128; x++) {
+            display.drawPixel(x, y, !display.getPixel(x, y)); //invert color
+          }
+        }
+        display.display();
+      } else if (disp) {
+        disp = false;
+        display.clearDisplay();
+        gameChangerDisplay();
+        display.display();
+      }
+      if (!level) gameChanger();
+      if (millis() - generalTimer >= 100) {
+        if (digitalRead(4)) { //level
+          level = 1;
+          generalTimer = millis();
+          tempTimer = millis() - 1000;
         } else if (digitalRead(5)) { //game selection
           level = 0;
           generalTimer = millis();
