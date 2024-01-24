@@ -172,6 +172,20 @@ float getPitch() {
 
 
 
+/* Thermometer Functions */
+
+void timeFormat(int seconds) {
+  uint16_t minutes = seconds / 60;
+  if (minutes > 0) {
+    display.print(minutes);
+    display.print("m ");
+  }
+  display.print(seconds % 60);
+  display.print('s');
+}
+
+
+
 /* Device Start */
 
 void setup() {
@@ -1064,40 +1078,123 @@ void setup() {
   /*Thermometer*/
 
   else if (game == 7) {
-    int8_t level = 1;
-    unsigned long generalTimer;
+    int16_t level = 1;
+    int8_t settingsSelect = 0;
+    bool settingsStart = true;
+    unsigned long generalTimer, historyTimer, historyTimerSave;
     long tempTimer = -1000;
+    float history[128];
+    for (uint8_t i = 0; i < 128; i++) history[i] = -1;
+    uint8_t place = 0;
+    float temperature, humidity, running = 0;
+    uint16_t count = 0;
+    uint16_t time = 1;
+    bool stop = false;
     Adafruit_SHTC3 shtc3 = Adafruit_SHTC3();
     shtc3.begin();
     while (true) {
-      if (level) {
-        if (millis() - tempTimer >= 1000) {
-          tempTimer = millis();
-          display.clearDisplay();
-          sensors_event_t humidity, temperature;
-          shtc3.getEvent(&humidity, &temperature);
-          float fahrenheit = temperature.temperature * (9.0/5.0) + 32;
-          String tempString = String(fahrenheit, 1);
-          display.setTextSize(4);
-          display.setCursor(64 - 10 * tempString.length() - 2 * (tempString.length() - 1), 8);
-          display.print(tempString);
-          String humidString = String(humidity.relative_humidity, 0) + '%';
-          display.setTextSize(2);
-          if (fahrenheit >= 80) {
-            display.setCursor(2, 48);
-          } else {
-            display.setCursor(64 - 5 * humidString.length() - (humidString.length() - 1), 48);
-          }
-          display.print(humidString);
-          if (fahrenheit >= 80) {
-            //From https://meteor.geol.iastate.edu/~ckarsten/bufkit/apparent_temperature.html
-            String feelsLike = String(-42.38 + 2.049*fahrenheit + 10.14*humidity.relative_humidity + -0.2248*fahrenheit*humidity.relative_humidity + -0.006838*fahrenheit*fahrenheit + -0.05482*humidity.relative_humidity*humidity.relative_humidity + 0.001228*fahrenheit*fahrenheit*humidity.relative_humidity + 0.0008528*fahrenheit*humidity.relative_humidity*humidity.relative_humidity + -0.00000199*fahrenheit*fahrenheit*humidity.relative_humidity*humidity.relative_humidity, 1);
-            display.setCursor(128 - 10 * feelsLike.length() - 2 * (feelsLike.length() - 1) - 2, 48);
-            display.print(feelsLike);
-          }
-          display.display();
+      if ((!stop or level == 1) and millis() - tempTimer >= 1000) {
+        tempTimer = millis();
+        sensors_event_t _humidity, _temperature;
+        shtc3.getEvent(&_humidity, &_temperature);
+        temperature = _temperature.temperature * (9.0/5.0) + 32;
+        humidity = _humidity.relative_humidity;
+        if (!stop) {
+          running += temperature;
+          count++;
         }
-      } else if (disp) {
+        if (level == 1 or (level > 2 and !stop)) {
+          disp = true;
+        }
+      }
+      if (stop or millis() - historyTimer >= time * 1000) {
+        historyTimer = millis();
+        if (!stop) {
+          if (place == 128) {
+            for (uint8_t i = 0; i < 127; i++) history[i] = history[i + 1];
+            history[127] = running / count;
+          } else {
+            history[place] = running / count;
+            if (level > 2 and level - 2 == place) {
+              level++;
+            }
+            place++;
+          }
+          running = 0;
+          count = 0;
+          if (level > 2) {
+            disp = true;
+          }
+        }
+      }
+      if (level == 1 and disp) {
+        disp = false;
+        display.clearDisplay();
+        String tempString = String(temperature, 1);
+        display.setTextSize(4);
+        display.setCursor(64 - 10 * tempString.length() - 2 * (tempString.length() - 1), 8);
+        display.print(tempString);
+        String humidString = String(humidity, 0) + '%';
+        display.setTextSize(2);
+        if (temperature >= 80) {
+          display.setCursor(2, 48);
+        } else {
+          display.setCursor(64 - 5 * humidString.length() - (humidString.length() - 1), 48);
+        }
+        display.print(humidString);
+        if (temperature >= 80) {
+          //From https://meteor.geol.iastate.edu/~ckarsten/bufkit/apparent_temperature.html
+          String feelsLike = String(-42.38 + 2.049*temperature + 10.14*humidity + -0.2248*temperature*humidity + -0.006838*temperature*temperature + -0.05482*humidity*humidity + 0.001228*temperature*temperature*humidity + 0.0008528*temperature*humidity*humidity + -0.00000199*temperature*temperature*humidity*humidity, 1);
+          display.setCursor(128 - 10 * feelsLike.length() - 2 * (feelsLike.length() - 1) - 2, 48);
+          display.print(feelsLike);
+        }
+        display.display();
+      } else if (level == 2 and disp) {
+        disp = false;
+        display.clearDisplay();
+        display.setTextSize(1);
+        display.setCursor(40, 0);
+        display.print("Settings");
+        if (settingsSelect == 0) {
+          display.fillRect(0, 8, 127, 18, WHITE);
+        } else {
+          display.fillRect(0, 26, 127, 9, WHITE);
+        }
+        display.setCursor(2, 9);
+        display.setTextColor(settingsSelect == 0 ? BLACK : WHITE);
+        display.print("Sample time: ");
+        display.print(time);
+        display.print('s');
+        display.setCursor(7, 18);
+        display.print("Total time: ");
+        timeFormat(128 * time);
+        display.setCursor(2, 27);
+        display.setTextColor(settingsSelect == 1 ? BLACK : WHITE);
+        display.print(stop ? "Restart" : "Stop");
+        display.setTextColor(WHITE);
+        display.display();
+      } else if (level > 2 and disp) {
+        disp = false;
+        display.clearDisplay();
+        for (uint8_t i = 0; i < place; i++) {
+          if (i == level - 3) {
+            display.drawFastVLine(i, 0, 55, WHITE);
+            display.drawPixel(i, min(54, max(0, history[i] / 100 * -54 + 54)), BLACK);
+          } else {
+            display.drawPixel(i, min(54, max(0, history[i] / 100 * -54 + 54)), WHITE);
+          }
+        }
+        display.drawFastHLine(0, 55, 127, WHITE);
+        display.setTextSize(1);
+        display.setCursor(0, 57);
+        display.print('-');
+        timeFormat((place - (level - 3)) * time + (int)((millis() - historyTimer) / 1000));
+        display.print(" to -");
+        timeFormat((place - (level - 2)) * time + (int)((millis() - historyTimer) / 1000));
+        display.print(": ");
+        display.print(String(history[level - 3], 1));
+        display.display();
+      } else if (level == 0 and disp) {
         disp = false;
         display.clearDisplay();
         gameChangerDisplay();
@@ -1106,11 +1203,57 @@ void setup() {
       if (!level) gameChanger();
       if (millis() - generalTimer >= 100) {
         if (digitalRead(4)) { //level
-          level = 1;
+          level = min(level + 1, place + 2);
+          if (level == 1 and stop) {
+            tempTimer = -1000;
+          }
+          if (level == 2) {
+            settingsStart = true;
+            settingsSelect = 0;
+          }
           generalTimer = millis();
-          tempTimer = millis() - 1000;
+          disp = true;
         } else if (digitalRead(5)) { //game selection
-          level = 0;
+          level = max(level - 1, 0);
+          if (level == 1 and stop) {
+            tempTimer = -1000;
+          }
+          if (level == 2) {
+            settingsStart = true;
+            settingsSelect = 0;
+          }
+          generalTimer = millis();
+          disp = true;
+        } else if (digitalRead(3) and level == 2) {
+          if (settingsStart) {
+            settingsSelect = (settingsSelect + 1) % 2;
+          } else if (settingsSelect == 0) {
+            time = max(time - 1, 1);
+            for (uint8_t i = 0; i < 128; i++) history[i] = -1;
+            place = 0;
+          } else if (settingsSelect == 1) {
+            stop = !stop;
+            if (!stop) {
+              for (uint8_t i = 0; i < 128; i++) history[i] = -1;
+              place = 0;
+            }
+          }
+          generalTimer = millis();
+          disp = true;
+        } else if (digitalRead(2) and level == 2) {
+          if (settingsStart) {
+            settingsStart = false;
+          } else if (settingsSelect == 0) {
+            time = min(time + 1, 300);
+            for (uint8_t i = 0; i < 128; i++) history[i] = -1;
+            place = 0;
+          } else if (settingsSelect == 1) {
+            stop = !stop;
+            if (!stop) {
+              for (uint8_t i = 0; i < 128; i++) history[i] = -1;
+              place = 0;
+            }
+          }
           generalTimer = millis();
           disp = true;
         }
