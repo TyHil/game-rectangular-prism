@@ -210,7 +210,7 @@ void setup() {
 
   if (game == 0) {
     int8_t level = 1;
-    unsigned long generalTimer;
+    unsigned long generalTimer = millis();
     bool tiltToTurn = 0;
 
     /*Setup*/
@@ -272,7 +272,7 @@ void setup() {
     for (uint8_t i = 0; i < 2; i++) asteroids[i] = Asteroid(8, 0, 0);
     for (uint8_t i = 2; i < level + 2; i++) asteroids[i] = Asteroid(16, 0, 0);
     for (uint8_t i = level + 2; i < 2 * (level + 1); i++) asteroids[i] = Asteroid(0, 0, 0);
-    unsigned long laserButtonTiming, shipTurnTiming, scoreTime = millis(); //timer for button presses and score
+    unsigned long laserButtonTiming = millis(), shipTurnTiming = millis(), scoreTime = millis(); //timer for button presses and score
     float pitchCorrection;
     if (tiltToTurn) {
       IMU.begin();
@@ -386,7 +386,7 @@ void setup() {
 
   else if (game == 1) { //comments are more sparse as the code is largely similar to Asteroids
     int8_t level = 1;
-    unsigned long generalTimer;
+    unsigned long generalTimer = millis();
 
     /*Setup*/
     while ((digitalRead(2) == 0 and digitalRead(3) == 0) or level == 0) {
@@ -420,10 +420,11 @@ void setup() {
     Ship* ships = new Ship[2];
     Asteroid* asteroids = new Asteroid[12];
     Laser** lasers = new Laser*[2];
-    unsigned long laserButtonTiming[2], shipTurnTiming[2], lastNoTurn[2], lastTurn[2], secondLastNoTurn[2], asteroidSpawn = millis(), textDisplay; //timers for button presses
-    bool turnDir = 1, win = 0, winner;
+    unsigned long laserButtonTiming[2] = {millis(), millis()}, shipTurnTiming[2] = {millis(), millis()}, lastNoTurn[2] = {millis(), millis()}, lastTurn[2] = {millis(), millis()}, secondLastNoTurn[2] = {millis(), millis()}, asteroidSpawn = millis(); //timers for button presses
+    long textDisplay = -501;
+    bool turnDir = 1, win = 0, winner = 0;
     String powers[] = {"Reverse", "Laser"};
-    uint8_t textDisplayNum;
+    uint8_t textDisplayNum = 0;
     for (uint8_t i = 0; i < 2; i++) lasers[i] = new Laser[2];
     ships[0] = Ship(32, 32, 0, 0);
     ships[1] = Ship(96, 32, (3 / 2) * M_PI, 1);
@@ -580,7 +581,7 @@ void setup() {
     const String names[7] = {"X", "Y", "Small", "Large", "2P", "1P", "0P"}; //gamemodes
     uint8_t nums[2] = {8, 4};
     int8_t level = 4;
-    unsigned long generalTimer;
+    unsigned long generalTimer = millis();
 
     /*Setup*/
     while ((digitalRead(2) == 0 and digitalRead(3) == 0) or (level != 4 and level != 5 and level != 6)) { //choose gamemode
@@ -655,8 +656,8 @@ void setup() {
       delay(50);
     }
     boolean spaceFromEdges = nums[0] > 3 and nums[1] > 3 and (nums[0] != 4 or nums[1] != 4); //is the board big enough to accomidate space away from the edges for starting pieces
-    uint8_t mx = min(spaceFromEdges, nums[0] - 1), my = min(spaceFromEdges, nums[1] - 1), mxLast[2] = {mx, max(nums[0] - 1 - spaceFromEdges, 0)}, myLast[2] = {my, max(nums[1] - 1  - spaceFromEdges, 0)}; //play choice, last choice
-    boolean turn = 0, flash; //turn, flashing selection
+    uint8_t mx = min(spaceFromEdges, nums[0] - 1), my = min(spaceFromEdges, nums[1] - 1), mxLast[2] = {mx, (uint8_t)max(nums[0] - 1 - spaceFromEdges, 0)}, myLast[2] = {my, (uint8_t)max(nums[1] - 1  - spaceFromEdges, 0)}; //play choice, last choice
+    boolean turn = 0, flash = 0; //turn, flashing selection
     unsigned long flashTime = 0;
     CloniumBoard board = CloniumBoard(nums[0], nums[1]);
     board.draw(display);
@@ -665,7 +666,7 @@ void setup() {
 
     /*Game*/
     while (true) {
-      if (level >= 5 and turn or level == 6) { //CPU
+      if ((level >= 5 and turn) or level == 6) { //CPU
         board.CPUMove(turn, display);
       } else { //player
         disp = true;
@@ -710,7 +711,7 @@ void setup() {
       }
       board.draw(display);
       display.display();
-      if (level == 4 or level == 5 and !turn) delay(200);
+      if (level == 4 or (level == 5 and !turn)) delay(200);
       boolean count = 1;
       for (uint8_t x = 0; x < board.XDim; x++) { //check for win by counting all of the enemies pieces
         for (uint8_t y = 0; y < board.YDim; y++) {
@@ -745,7 +746,7 @@ void setup() {
 
   else if (game == 3) {
     int8_t level = 4;
-    unsigned long generalTimer;
+    unsigned long generalTimer = millis();
     uint8_t nums[3] = {8, 4, 5};
     const String names[6] = {"X", "Y", "Mines", "Start", "Small", "Large"};
 
@@ -823,7 +824,7 @@ void setup() {
       }
     }
     uint8_t mx = 0, my = 0; //play choice
-    boolean gen = 1, flash;
+    boolean gen = 1, flash = 0;
     disp = true;
     MinesweeperBoard board = MinesweeperBoard(nums[0], nums[1], nums[2]);
     board.draw(0, display);
@@ -917,7 +918,7 @@ void setup() {
 
   else if (game == 4) {
     int8_t level = 0;
-    unsigned long generalTimer;
+    unsigned long generalTimer = millis();
     const String names[5] = {"Random Number", "Min", "Max", "Dec", "Result"}; //names
     int16_t nums[3] = {0, 1, 0}; //min, max, and number of decimal places
     float result = random(0, 2);
@@ -981,8 +982,8 @@ void setup() {
 
   else if (game == 5) {
     int8_t level = 1;
-    unsigned long generalTimer;
-    float pitch, pitchCorrection; //calibration
+    unsigned long generalTimer = millis();
+    float pitch = 0, pitchCorrection = 0; //calibration
     IMU.begin();
     while (true) {
       if (level) {
@@ -1032,7 +1033,7 @@ void setup() {
 
   else if (game == 6) {
     int8_t level = 1;
-    unsigned long generalTimer, betweenTimer;
+    unsigned long generalTimer = millis(), betweenTimer = millis();
     uint8_t betweenDur = 0;
     Firework fireworks[10];// = Firework(random(0, 128), random(0, 64));
     for (uint8_t i = 0; i < 10; i++) {
@@ -1083,12 +1084,12 @@ void setup() {
     int16_t level = 1;
     int8_t settingsSelect = 0;
     bool settingsStart = true;
-    unsigned long generalTimer, historyTimer, historyTimerSave;
-    long tempTimer = -1000;
+    unsigned long generalTimer = millis(), historyTimer = millis();
+    long tempTimer = -1001;
     float history[128];
     for (uint8_t i = 0; i < 128; i++) history[i] = -1;
     uint8_t place = 0;
-    float temperature, humidity, running = 0;
+    float temperature = 0, humidity = 0, running = 0;
     uint16_t count = 0;
     uint16_t time = 1;
     bool stop = false;
@@ -1209,7 +1210,7 @@ void setup() {
         if (digitalRead(4)) { //level
           level = min(level + 1, place + 2);
           if (level == 1 and stop) {
-            tempTimer = -1000;
+            tempTimer = -1001;
           }
           if (level == 2) {
             settingsStart = true;
@@ -1220,7 +1221,7 @@ void setup() {
         } else if (digitalRead(5)) { //game selection
           level = max(level - 1, 0);
           if (level == 1 and stop) {
-            tempTimer = -1000;
+            tempTimer = -1001;
           }
           if (level == 2) {
             settingsStart = true;
