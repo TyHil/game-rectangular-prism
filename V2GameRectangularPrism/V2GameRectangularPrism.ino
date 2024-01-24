@@ -1194,7 +1194,7 @@ void setup() {
             display.drawPixel(i, min(54, max(0, history[i] / 100 * -54 + 54)), WHITE);
           }
         }
-        display.drawFastHLine(0, 55, 127, WHITE);
+        display.drawFastHLine(0, 55, 128, WHITE);
         display.setTextSize(1);
         display.setCursor(0, 57);
         timeFormat((place - (level - 3)) * time + (int)((millis() - historyTimer) / 1000));
