@@ -11,7 +11,7 @@
 #include "boards.h"
 #include "firework.h"
 #include <Arduino_LSM6DS3.h>
-#include "Adafruit_SHTC3.h"
+#include <Adafruit_SHTC3.h>
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 uint8_t game; //which game is being played
 boolean disp = true; //limits display refreshes when nothing has changed
