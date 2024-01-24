@@ -178,7 +178,7 @@ void timeFormat(int seconds) {
   uint16_t minutes = seconds / 60;
   if (minutes > 0) {
     display.print(minutes);
-    display.print("m ");
+    display.print('m');
   }
   display.print(seconds % 60);
   display.print('s');
@@ -1187,9 +1187,8 @@ void setup() {
         display.drawFastHLine(0, 55, 127, WHITE);
         display.setTextSize(1);
         display.setCursor(0, 57);
-        display.print('-');
         timeFormat((place - (level - 3)) * time + (int)((millis() - historyTimer) / 1000));
-        display.print(" to -");
+        display.print("-");
         timeFormat((place - (level - 2)) * time + (int)((millis() - historyTimer) / 1000));
         display.print(": ");
         display.print(String(history[level - 3], 1));
