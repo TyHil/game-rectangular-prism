@@ -1063,7 +1063,8 @@ void setup() {
 
   else if (game == 7) {
     int8_t level = 1;
-    unsigned long generalTimer, tempTimer;
+    unsigned long generalTimer;
+    long tempTimer = -1000;
     Adafruit_SHTC3 shtc3 = Adafruit_SHTC3();
     shtc3.begin();
     while (true) {
@@ -1071,23 +1072,25 @@ void setup() {
         tempTimer = millis();
         display.clearDisplay();
         sensors_event_t humidity, temperature;
-        shtc3.getEvent(&humidity, &temperature); //populate temp and humidity objects with fresh data
+        shtc3.getEvent(&humidity, &temperature);
         float fahrenheit = temperature.temperature * (9.0/5.0) + 32;
         String tempString = String(fahrenheit, 1);
         display.setTextSize(4);
         display.setCursor(64 - 10 * tempString.length() - 2 * (tempString.length() - 1), 8);
         display.print(tempString);
+        String humidString = String(humidity.relative_humidity, 0) + '%';
         display.setTextSize(2);
-        display.setCursor(2, 48);
-        display.print(String(humidity.relative_humidity, 0) + '%');
-        //From https://meteor.geol.iastate.edu/~ckarsten/bufkit/apparent_temperature.html
-        String feelsLike = String(-42.38 + 2.049*fahrenheit + 10.14*humidity.relative_humidity + -0.2248*fahrenheit*humidity.relative_humidity + -0.006838*fahrenheit*fahrenheit + -0.05482*humidity.relative_humidity*humidity.relative_humidity + 0.001228*fahrenheit*fahrenheit*humidity.relative_humidity + 0.0008528*fahrenheit*humidity.relative_humidity*humidity.relative_humidity + -0.00000199*fahrenheit*fahrenheit*humidity.relative_humidity*humidity.relative_humidity, 1);
-        display.setCursor(128 - 10 * feelsLike.length() - 2 * (feelsLike.length() - 1) - 2, 48);
-        display.print(feelsLike);
-        for (uint8_t y = 64; y > max(0, fahrenheit / 100 * -64 + 64); y--) {
-          for (uint8_t x = 0; x < 128; x++) {
-            display.drawPixel(x, y, !display.getPixel(x, y)); //invert color
-          }
+        if (fahrenheit >= 80) {
+          display.setCursor(2, 48);
+        } else {
+          display.setCursor(64 - 5 * humidString.length() - (humidString.length() - 1), 48);
+        }
+        display.print(humidString);
+        if (fahrenheit >= 80) {
+          //From https://meteor.geol.iastate.edu/~ckarsten/bufkit/apparent_temperature.html
+          String feelsLike = String(-42.38 + 2.049*fahrenheit + 10.14*humidity.relative_humidity + -0.2248*fahrenheit*humidity.relative_humidity + -0.006838*fahrenheit*fahrenheit + -0.05482*humidity.relative_humidity*humidity.relative_humidity + 0.001228*fahrenheit*fahrenheit*humidity.relative_humidity + 0.0008528*fahrenheit*humidity.relative_humidity*humidity.relative_humidity + -0.00000199*fahrenheit*fahrenheit*humidity.relative_humidity*humidity.relative_humidity, 1);
+          display.setCursor(128 - 10 * feelsLike.length() - 2 * (feelsLike.length() - 1) - 2, 48);
+          display.print(feelsLike);
         }
         display.display();
       } else if (disp) {
