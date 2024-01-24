@@ -1234,38 +1234,50 @@ void setup() {
           }
           generalTimer = millis();
           disp = true;
-        } else if (digitalRead(3) and level == 2) {
-          if (settingsStart) {
-            settingsSelect = (settingsSelect + 1) % 2;
-          } else if (settingsSelect == 0) {
-            time = max(time - 1, 1);
-            for (uint8_t i = 0; i < 128; i++) history[i] = -1;
-            place = 0;
-          } else if (settingsSelect == 1) {
-            stop = !stop;
-            if (!stop) {
+        } else if (digitalRead(3)) {
+          if (level == 2) {
+            if (settingsStart) {
+              settingsSelect = (settingsSelect + 1) % 2;
+            } else if (settingsSelect == 0) {
+              time = max(time - 1, 1);
               for (uint8_t i = 0; i < 128; i++) history[i] = -1;
               place = 0;
+            } else if (settingsSelect == 1) {
+              stop = !stop;
+              if (!stop) {
+                for (uint8_t i = 0; i < 128; i++) history[i] = -1;
+                place = 0;
+              }
             }
+          } else if (level > 2) {
+            level = 3;
           }
-          generalTimer = millis();
-          disp = true;
-        } else if (digitalRead(2) and level == 2) {
-          if (settingsStart) {
-            settingsStart = false;
-          } else if (settingsSelect == 0) {
-            time = min(time + 1, 300);
-            for (uint8_t i = 0; i < 128; i++) history[i] = -1;
-            place = 0;
-          } else if (settingsSelect == 1) {
-            stop = !stop;
-            if (!stop) {
+          if (level > 1) {
+            generalTimer = millis();
+            disp = true;
+          }
+        } else if (digitalRead(2)) {
+          if (level == 2) {
+            if (settingsStart) {
+              settingsStart = false;
+            } else if (settingsSelect == 0) {
+              time = min(time + 1, 300);
               for (uint8_t i = 0; i < 128; i++) history[i] = -1;
               place = 0;
+            } else if (settingsSelect == 1) {
+              stop = !stop;
+              if (!stop) {
+                for (uint8_t i = 0; i < 128; i++) history[i] = -1;
+                place = 0;
+              }
             }
+          } else if (level > 2) {
+            level = place + 2;
           }
-          generalTimer = millis();
-          disp = true;
+          if (level > 1) {
+            generalTimer = millis();
+            disp = true;
+          }
         }
       }
       delay(50);
