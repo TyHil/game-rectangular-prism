@@ -1134,8 +1134,13 @@ void setup() {
         disp = false;
         display.clearDisplay();
         String tempString = String(temperature, 1);
-        display.setTextSize(4);
-        display.setCursor(64 - 10 * (tempString.length() + 1) - 2 * tempString.length(), 8);
+        if (temperature < 100) {
+          display.setTextSize(4);
+          display.setCursor(64 - 10 * (tempString.length() + 1) - 2 * tempString.length(), 8);
+        } else {
+          display.setTextSize(3);
+          display.setCursor(64 - 7.5 * (tempString.length() + 1) - 1.5 * tempString.length(), 12);
+        }
         display.print(tempString);
         display.write(0xF8);
         String humidString = String(humidity, 0) + '%';
