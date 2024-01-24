@@ -193,6 +193,7 @@ void setup() {
   pinMode(6, OUTPUT);
   //Serial.begin(9600); //Serial.println("");
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.cp437(true);
   Wire.begin();
   randomSeed(analogRead(1)); //better random
   pinMode(2, INPUT_PULLUP);
@@ -990,8 +991,9 @@ void setup() {
           pitch = getPitch();
           int8_t angle = atan(pitch - pitchCorrection) * 180 / M_PI; //degrees
           display.setTextSize(4);
-          display.setCursor(64 - 10 * String(angle).length() - 2 * (String(angle).length() - 1), 16);
+          display.setCursor(64 - 10 * (String(angle).length() + 1) - 2 * String(angle).length(), 16);
           display.print(angle);
+          display.write(0xF8);
           for (uint8_t x = 0; x < 128; x++) {
             for (int16_t y = min(max((pitch - pitchCorrection) * (x - 64) + 32, 0), 66) - 2; y < 64; y++) { //for pixels past level line
               display.drawPixel(x, y, !display.getPixel(x, y)); //invert color
@@ -1132,8 +1134,9 @@ void setup() {
         display.clearDisplay();
         String tempString = String(temperature, 1);
         display.setTextSize(4);
-        display.setCursor(64 - 10 * tempString.length() - 2 * (tempString.length() - 1), 8);
+        display.setCursor(64 - 10 * (tempString.length() + 1) - 2 * tempString.length(), 8);
         display.print(tempString);
+        display.write(0xF8);
         String humidString = String(humidity, 0) + '%';
         display.setTextSize(2);
         if (temperature >= 80) {
@@ -1145,8 +1148,9 @@ void setup() {
         if (temperature >= 80) {
           //From https://meteor.geol.iastate.edu/~ckarsten/bufkit/apparent_temperature.html
           String feelsLike = String(-42.38 + 2.049*temperature + 10.14*humidity + -0.2248*temperature*humidity + -0.006838*temperature*temperature + -0.05482*humidity*humidity + 0.001228*temperature*temperature*humidity + 0.0008528*temperature*humidity*humidity + -0.00000199*temperature*temperature*humidity*humidity, 1);
-          display.setCursor(128 - 10 * feelsLike.length() - 2 * (feelsLike.length() - 1) - 2, 48);
+          display.setCursor(128 - 10 * (feelsLike.length() + 1) - 2 * feelsLike.length() - 2, 48);
           display.print(feelsLike);
+          display.write(0xF8);
         }
         display.display();
       } else if (level == 2 and disp) {
@@ -1192,6 +1196,7 @@ void setup() {
         timeFormat((place - (level - 2)) * time + (int)((millis() - historyTimer) / 1000));
         display.print(": ");
         display.print(String(history[level - 3], 1));
+        display.write(0xF8);
         display.display();
       } else if (level == 0 and disp) {
         disp = false;
