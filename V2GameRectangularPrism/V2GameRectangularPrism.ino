@@ -1082,20 +1082,22 @@ void setup() {
 
   else if (game == 7) {
     int16_t level = 1;
-    int8_t settingsSelect = 0;
-    bool settingsStart = true;
-    unsigned long generalTimer = millis(), historyTimer = millis();
+    int8_t settingsSelect = 0; //option to control in settings
+    bool settingsStart = true; //true on switch to settings page
+    unsigned long generalTimer = millis();
+    unsigned long historyTimer = millis(); //when to save graph data
     long tempTimer = -1001;
     float history[128];
     for (uint8_t i = 0; i < 128; i++) history[i] = -1;
     uint8_t place = 0;
     float temperature = 0, humidity = 0, running = 0;
-    uint16_t count = 0;
-    uint16_t time = 1;
-    bool stop = false;
+    uint16_t count = 0; //temps in running for avg
+    uint16_t time = 1; //duration of recording for history
+    bool stop = false; //pause
     Adafruit_SHTC3 shtc3 = Adafruit_SHTC3();
     shtc3.begin();
     while (true) {
+      //run every second on display page and in background when recording history
       if ((!stop or level == 1) and millis() - tempTimer >= 1000) {
         tempTimer = millis();
         sensors_event_t _humidity, _temperature;
@@ -1110,10 +1112,11 @@ void setup() {
           disp = true;
         }
       }
+      //record every time seconds, keep (millis() - historyTimer) at 0 while stopped
       if (stop or millis() - historyTimer >= time * 1000) {
         historyTimer = millis();
         if (!stop) {
-          if (place == 128) {
+          if (place == 128) { //shift and add
             for (uint8_t i = 0; i < 127; i++) history[i] = history[i + 1];
             history[127] = running / count;
           } else {
@@ -1142,7 +1145,7 @@ void setup() {
           display.setCursor(64 - 7.5 * (tempString.length() + 1) - 1.5 * tempString.length(), 12);
         }
         display.print(tempString);
-        display.write(0xF8);
+        display.write(0xF8); //degree symbol
         String humidString = String(humidity, 0) + '%';
         display.setTextSize(2);
         if (temperature >= 80) {
@@ -1151,11 +1154,11 @@ void setup() {
           display.setCursor(64 - 5 * humidString.length() - (humidString.length() - 1), 48);
         }
         display.print(humidString);
-        if (temperature >= 80) {
+        if (temperature >= 80) { //heat index only valid for temp >= 80
           //From https://meteor.geol.iastate.edu/~ckarsten/bufkit/apparent_temperature.html
-          String feelsLike = String(-42.38 + 2.049*temperature + 10.14*humidity + -0.2248*temperature*humidity + -0.006838*temperature*temperature + -0.05482*humidity*humidity + 0.001228*temperature*temperature*humidity + 0.0008528*temperature*humidity*humidity + -0.00000199*temperature*temperature*humidity*humidity, 1);
-          display.setCursor(128 - 10 * (feelsLike.length() + 1) - 2 * feelsLike.length() - 2, 48);
-          display.print(feelsLike);
+          String heatIndex = String(-42.38 + 2.049*temperature + 10.14*humidity + -0.2248*temperature*humidity + -0.006838*temperature*temperature + -0.05482*humidity*humidity + 0.001228*temperature*temperature*humidity + 0.0008528*temperature*humidity*humidity + -0.00000199*temperature*temperature*humidity*humidity, 1);
+          display.setCursor(128 - 10 * (heatIndex.length() + 1) - 2 * heatIndex.length() - 2, 48);
+          display.print(heatIndex);
           display.write(0xF8);
         }
         display.display();
@@ -1170,7 +1173,7 @@ void setup() {
         } else {
           display.fillRect(0, 26, 127, 9, WHITE);
         }
-        display.setCursor(2, 9);
+        display.setCursor(2, 9); //sample duration
         display.setTextColor(settingsSelect == 0 ? BLACK : WHITE);
         display.print("Sample time: ");
         display.print(time);
@@ -1178,7 +1181,7 @@ void setup() {
         display.setCursor(7, 18);
         display.print("Total time: ");
         timeFormat(128 * time);
-        display.setCursor(2, 27);
+        display.setCursor(2, 27); //stop recording
         display.setTextColor(settingsSelect == 1 ? BLACK : WHITE);
         display.print(stop ? "Restart" : "Stop");
         display.setTextColor(WHITE);
@@ -1187,16 +1190,16 @@ void setup() {
         disp = false;
         display.clearDisplay();
         for (uint8_t i = 0; i < place; i++) {
-          if (i == level - 3) {
+          if (i == level - 3) { //selected
             display.drawFastVLine(i, 0, 55, WHITE);
             display.drawPixel(i, min(54, max(0, history[i] / 100 * -54 + 54)), BLACK);
-          } else {
+          } else { //normal
             display.drawPixel(i, min(54, max(0, history[i] / 100 * -54 + 54)), WHITE);
           }
         }
         display.drawFastHLine(0, 55, 128, WHITE);
         display.setTextSize(1);
-        display.setCursor(0, 57);
+        display.setCursor(0, 57); //time period
         timeFormat((place - (level - 3)) * time + (int)((millis() - historyTimer) / 1000));
         display.print("-");
         timeFormat((place - (level - 2)) * time + (int)((millis() - historyTimer) / 1000));
@@ -1212,12 +1215,12 @@ void setup() {
       }
       if (!level) gameChanger();
       if (millis() - generalTimer >= 100) {
-        if (digitalRead(4)) { //level
-          level = min(level + 1, place + 2);
-          if (level == 1 and stop) {
+        if (digitalRead(4)) {
+          level = min(level + 1, place + 2); //max is max history recorded
+          if (level == 1 and stop) { //remeasure
             tempTimer = -1001;
           }
-          if (level == 2) {
+          if (level == 2) { //settings prep
             settingsStart = true;
             settingsSelect = 0;
           }
@@ -1225,31 +1228,31 @@ void setup() {
           disp = true;
         } else if (digitalRead(5)) { //game selection
           level = max(level - 1, 0);
-          if (level == 1 and stop) {
+          if (level == 1 and stop) { //remeasure
             tempTimer = -1001;
           }
-          if (level == 2) {
+          if (level == 2) { //settings prep
             settingsStart = true;
             settingsSelect = 0;
           }
           generalTimer = millis();
           disp = true;
         } else if (digitalRead(3)) {
-          if (level == 2) {
-            if (settingsStart) {
+          if (level == 2) { //settings
+            if (settingsStart) { //select setting to change
               settingsSelect = (settingsSelect + 1) % 2;
-            } else if (settingsSelect == 0) {
+            } else if (settingsSelect == 0) { //time change
               time = max(time - 1, 1);
               for (uint8_t i = 0; i < 128; i++) history[i] = -1;
               place = 0;
-            } else if (settingsSelect == 1) {
+            } else if (settingsSelect == 1) { //stop change
               stop = !stop;
-              if (!stop) {
+              if (!stop) { //clear
                 for (uint8_t i = 0; i < 128; i++) history[i] = -1;
                 place = 0;
               }
             }
-          } else if (level > 2) {
+          } else if (level > 2) { //jump to start
             level = 3;
           }
           if (level > 1) {
@@ -1257,22 +1260,22 @@ void setup() {
             disp = true;
           }
         } else if (digitalRead(2)) {
-          if (level == 2) {
-            if (settingsStart) {
+          if (level == 2) { //settings
+            if (settingsStart) { //confirm setting to change
               settingsStart = false;
-            } else if (settingsSelect == 0) {
+            } else if (settingsSelect == 0) { //time change
               time = min(time + 1, 300);
               for (uint8_t i = 0; i < 128; i++) history[i] = -1;
               place = 0;
-            } else if (settingsSelect == 1) {
+            } else if (settingsSelect == 1) { //stop change
               stop = !stop;
-              if (!stop) {
+              if (!stop) { //clear
                 for (uint8_t i = 0; i < 128; i++) history[i] = -1;
                 place = 0;
               }
             }
-          } else if (level > 2) {
-            level = place + 2;
+          } else if (level > 2) { //jump to end
+            level = place + 2; //max is max history recorded
           }
           if (level > 1) {
             generalTimer = millis();
@@ -1302,5 +1305,7 @@ void setup() {
     }
   }
 }
+
+
 
 void loop() {}
