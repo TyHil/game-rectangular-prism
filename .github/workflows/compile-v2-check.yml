@@ -1,0 +1,27 @@
+name: Compile V2 Check
+
+on: 
+  push:
+    paths:
+      - V2GameRectangularPrism/**
+
+jobs:
+  main:
+    name: Compile
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v3
+
+      - name: Compile
+        working-directory: V2GameRectangularPrism
+        uses: arduino/compile-sketches@v1
+        with:
+          fqbn: "arduino:samd:nano_33_iot"
+          libraries: |
+            - name: Wire
+            - name: Adafruit_GFX
+            - name: Adafruit_SSD1306
+            - name: Arduino_LSM6DS3
+            - name: Adafruit_SHTC3
