@@ -21,6 +21,5 @@ jobs:
             - V1GameRectangularPrism
           fqbn: "arduino:megaavr:nano_every"
           libraries: |
-            - name: Wire
             - name: Adafruit_GFX
             - name: Adafruit_SSD1306

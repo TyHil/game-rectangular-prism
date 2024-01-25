@@ -21,7 +21,6 @@ jobs:
             - V2GameRectangularPrism
           fqbn: "arduino:samd:nano_33_iot"
           libraries: |
-            - name: Wire
             - name: Adafruit_GFX
             - name: Adafruit_SSD1306
             - name: Arduino_LSM6DS3
