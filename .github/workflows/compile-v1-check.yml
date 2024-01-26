@@ -2,8 +2,8 @@ name: Compile V1 Check
 
 on: 
   push:
-#    paths:
-#      - V1GameRectangularPrism/**
+    paths:
+      - V1GameRectangularPrism/**
 
 jobs:
   main:
