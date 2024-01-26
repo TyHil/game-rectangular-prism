@@ -19,7 +19,7 @@ jobs:
         with:
           sketch-paths: |
             - V1GameRectangularPrism
-          fqbn: "arduino:megaavr:nano_every"
+          fqbn: "arduino:megaavr:nona4809"
           libraries: |
             - name: Adafruit GFX Library
             - name: Adafruit SSD1306
