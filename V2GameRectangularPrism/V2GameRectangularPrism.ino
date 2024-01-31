@@ -88,7 +88,7 @@ void newhigh(int8_t level, uint8_t score) { //sets a new high score for Asteroid
     else break;
   i++;
   uint8_t name[3] = {65, 65, 65}; //name storage
-  unsigned long generalTimer = 0;
+  uint64_t generalTimer = 0;
   for (uint8_t k = 0; k < 3; k++) { //name choice
     delay(200);
     while (digitalRead(2) == 0 and digitalRead(3) == 0) {
@@ -210,7 +210,7 @@ void setup() {
 
   if (game == 0) {
     int8_t level = 1;
-    unsigned long generalTimer = millis();
+    uint64_t generalTimer = millis();
     bool tiltToTurn = 0;
 
     /*Setup*/
@@ -272,7 +272,7 @@ void setup() {
     for (uint8_t i = 0; i < 2; i++) asteroids[i] = Asteroid(8, 0, 0);
     for (uint8_t i = 2; i < level + 2; i++) asteroids[i] = Asteroid(16, 0, 0);
     for (uint8_t i = level + 2; i < 2 * (level + 1); i++) asteroids[i] = Asteroid(0, 0, 0);
-    unsigned long laserButtonTiming = millis(), shipTurnTiming = millis(), scoreTime = millis(); //timer for button presses and score
+    uint64_t laserButtonTiming = millis(), shipTurnTiming = millis(), scoreTime = millis(); //timer for button presses and score
     float pitchCorrection;
     if (tiltToTurn) {
       IMU.begin();
@@ -386,7 +386,7 @@ void setup() {
 
   else if (game == 1) { //comments are more sparse as the code is largely similar to Asteroids
     int8_t level = 1;
-    unsigned long generalTimer = millis();
+    uint64_t generalTimer = millis();
 
     /*Setup*/
     while ((digitalRead(2) == 0 and digitalRead(3) == 0) or level == 0) {
@@ -420,8 +420,8 @@ void setup() {
     Ship* ships = new Ship[2];
     Asteroid* asteroids = new Asteroid[12];
     Laser** lasers = new Laser*[2];
-    unsigned long laserButtonTiming[2] = {millis(), millis()}, shipTurnTiming[2] = {millis(), millis()}, lastNoTurn[2] = {millis(), millis()}, lastTurn[2] = {millis(), millis()}, secondLastNoTurn[2] = {millis(), millis()}, asteroidSpawn = millis(); //timers for button presses
-    long textDisplay = -501;
+    uint64_t laserButtonTiming[2] = {millis(), millis()}, shipTurnTiming[2] = {millis(), millis()}, lastNoTurn[2] = {millis(), millis()}, lastTurn[2] = {millis(), millis()}, secondLastNoTurn[2] = {millis(), millis()}, asteroidSpawn = millis(); //timers for button presses
+    int64_t textDisplay = -501;
     bool turnDir = 1, win = 0, winner = 0;
     String powers[] = {"Reverse", "Laser"};
     uint8_t textDisplayNum = 0;
@@ -581,7 +581,7 @@ void setup() {
     const String names[7] = {"X", "Y", "Small", "Large", "2P", "1P", "0P"}; //gamemodes
     uint8_t nums[2] = {8, 4};
     int8_t level = 4;
-    unsigned long generalTimer = millis();
+    uint64_t generalTimer = millis();
 
     /*Setup*/
     while ((digitalRead(2) == 0 and digitalRead(3) == 0) or (level != 4 and level != 5 and level != 6)) { //choose gamemode
@@ -658,7 +658,7 @@ void setup() {
     boolean spaceFromEdges = nums[0] > 3 and nums[1] > 3 and (nums[0] != 4 or nums[1] != 4); //is the board big enough to accomidate space away from the edges for starting pieces
     uint8_t mx = min(spaceFromEdges, nums[0] - 1), my = min(spaceFromEdges, nums[1] - 1), mxLast[2] = {mx, (uint8_t)max(nums[0] - 1 - spaceFromEdges, 0)}, myLast[2] = {my, (uint8_t)max(nums[1] - 1  - spaceFromEdges, 0)}; //play choice, last choice
     boolean turn = 0, flash = 0; //turn, flashing selection
-    unsigned long flashTime = 0;
+    uint64_t flashTime = 0;
     CloniumBoard board = CloniumBoard(nums[0], nums[1]);
     board.draw(display);
     display.display();
@@ -746,7 +746,7 @@ void setup() {
 
   else if (game == 3) {
     int8_t level = 4;
-    unsigned long generalTimer = millis();
+    uint64_t generalTimer = millis();
     uint8_t nums[3] = {8, 4, 5};
     const String names[6] = {"X", "Y", "Mines", "Start", "Small", "Large"};
 
@@ -830,7 +830,7 @@ void setup() {
     board.draw(0, display);
     display.display();
     waitAllUnclick();
-    unsigned long flashTime = 0, scoreTime = millis(); //timers for flashing selection and score
+    uint64_t flashTime = 0, scoreTime = millis(); //timers for flashing selection and score
 
     /*Game*/
     while (true) {
@@ -918,7 +918,7 @@ void setup() {
 
   else if (game == 4) {
     int8_t level = 0;
-    unsigned long generalTimer = millis();
+    uint64_t generalTimer = millis();
     const String names[5] = {"Random Number", "Min", "Max", "Dec", "Result"}; //names
     int16_t nums[3] = {0, 1, 0}; //min, max, and number of decimal places
     float result = random(0, 2);
@@ -982,7 +982,7 @@ void setup() {
 
   else if (game == 5) {
     int8_t level = 1;
-    unsigned long generalTimer = millis();
+    uint64_t generalTimer = millis();
     float pitch = 0, pitchCorrection = 0; //calibration
     IMU.begin();
     while (true) {
@@ -1033,7 +1033,7 @@ void setup() {
 
   else if (game == 6) {
     int8_t level = 1;
-    unsigned long generalTimer = millis(), betweenTimer = millis();
+    uint64_t generalTimer = millis(), betweenTimer = millis();
     uint8_t betweenDur = 0;
     Firework fireworks[10];// = Firework(random(0, 128), random(0, 64));
     for (uint8_t i = 0; i < 10; i++) {
@@ -1084,9 +1084,9 @@ void setup() {
     int16_t level = 1;
     int8_t settingsSelect = 0; //option to control in settings
     bool settingsStart = true; //true on switch to settings page
-    unsigned long generalTimer = millis();
-    unsigned long historyTimer = millis(); //when to save graph data
-    long tempTimer = -1001;
+    uint64_t generalTimer = millis();
+    uint64_t historyTimer = millis(); //when to save graph data
+    int64_t tempTimer = -1001;
     float history[128];
     for (uint8_t i = 0; i < 128; i++) history[i] = -1;
     uint8_t place = 0;
