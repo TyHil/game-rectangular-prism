@@ -12,9 +12,8 @@
 #include "screen.h"
 #include "level.h"
 #include "fireworks.h"
+#include "thermometer.h"
 #include "cube.h"
-#include <Arduino_LSM6DS3.h>
-#include <Adafruit_SHTC3.h>
 enum App { asteroids, astroParty, clonium, minesweeper, randomNum, level, fireworks, thermometer, cube, NUM_APPS };
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 App app; //which app is being used
@@ -160,20 +159,6 @@ void gameChanger() { //update app selection and restart arduino on choice
     updateEEPROM(25, app);
     digitalWrite(6, LOW);
   }
-}
-
-
-
-/* Thermometer Functions */
-
-void timeFormat(int seconds) {
-  uint16_t minutes = seconds / 60;
-  if (minutes > 0) {
-    display.print(minutes);
-    display.print('m');
-  }
-  display.print(seconds % 60);
-  display.print('s');
 }
 
 
@@ -915,6 +900,7 @@ void setup() {
     int16_t nums[3] = {0, 1, 0}; //min, max, and number of decimal places
     float result = random(0, 2);
     display.setTextSize(1);
+
     while (true) {
       if (disp) {
         disp = false;
@@ -935,6 +921,7 @@ void setup() {
         } else gameChangerDisplay();
         display.display();
       }
+
       if (millis() - generalTimer >= 100) {
         if (digitalRead(4)) {
           level = min(level + 1, 3);
@@ -975,6 +962,7 @@ void setup() {
   else if (app == level) {
     Screen screen = Screen(2, 1);
     Level level = Level();
+
     while (true) {
       if (screen.screen == 0 and disp) {
         disp = false;
@@ -984,6 +972,7 @@ void setup() {
       } else if (screen.screen == 1) {
         level.display(display);
       }
+
       if (screen.screen == 0) gameChanger();
       if (screen.buttons()) {
         if (digitalRead(5)) { //app selection
@@ -1003,6 +992,7 @@ void setup() {
   else if (app == fireworks) {
     Screen screen = Screen(2, 1);
     Fireworks fireworks = Fireworks();
+
     while (true) {
       if (screen.screen == 0 and disp) {
         disp = false;
@@ -1014,6 +1004,7 @@ void setup() {
         fireworks.display(display);
         display.display();
       }
+
       if (screen.screen == 0) gameChanger();
       if (screen.buttons()) {
         if (digitalRead(5)) { //app selection
@@ -1029,57 +1020,14 @@ void setup() {
   /* Thermometer */
 
   else if (app == thermometer) {
-    Screen screen = Screen(3, 1);
-    int8_t settingsSelect = 0; //option to control in settings
-    bool settingsStart = true; //true on switch to settings page
-    uint64_t historyTimer = millis(); //when to save graph data
-    int64_t tempTimer = -1001;
-    float history[128];
-    for (uint8_t i = 0; i < 128; i++) history[i] = -1;
-    uint8_t place = 0;
-    float temperature = 0, humidity = 0, running = 0;
-    uint16_t count = 0; //temps in running for avg
-    uint16_t time = 1; //duration of recording for history
-    bool stop = false; //pause
-    Adafruit_SHTC3 shtc3 = Adafruit_SHTC3();
-    shtc3.begin();
+    Screen screen = Screen(4, 1);
+    Thermometer thermometer = Thermometer();
+
     while (true) {
-      //run every second on display page and in background when recording history
-      if ((!stop or screen.screen == 1) and millis() - tempTimer >= 1000) {
-        tempTimer = millis();
-        sensors_event_t _humidity, _temperature;
-        shtc3.getEvent(&_humidity, &_temperature);
-        temperature = _temperature.temperature * (9.0/5.0) + 32;
-        humidity = _humidity.relative_humidity;
-        if (!stop) {
-          running += temperature;
-          count++;
-        }
-        if (screen.screen == 1 or (screen.screen > 2 and !stop)) {
-          disp = true;
-        }
+      if (thermometer.measure(screen.screen)) {
+        disp = true;
       }
-      //record every time seconds, keep (millis() - historyTimer) at 0 while stopped
-      if (stop or millis() - historyTimer >= time * 1000) {
-        historyTimer = millis();
-        if (!stop) {
-          if (place == 128) { //shift and add
-            for (uint8_t i = 0; i < 127; i++) history[i] = history[i + 1];
-            history[127] = running / count;
-          } else {
-            history[place] = running / count;
-            if (screen.screen > 2 and screen.screen - 2 == place) {
-              screen.screen++;
-            }
-            place++;
-          }
-          running = 0;
-          count = 0;
-          if (screen.screen > 2) {
-            disp = true;
-          }
-        }
-      }
+
       if (screen.screen == 0 and disp) {
         disp = false;
         display.clearDisplay();
@@ -1088,137 +1036,64 @@ void setup() {
       } else if (screen.screen == 1 and disp) {
         disp = false;
         display.clearDisplay();
-        String tempString = String(temperature, 1);
-        if (temperature < 100) {
-          display.setTextSize(4);
-          display.setCursor(64 - 10 * (tempString.length() + 1) - 2 * tempString.length(), 8);
-        } else {
-          display.setTextSize(3);
-          display.setCursor(64 - 7.5 * (tempString.length() + 1) - 1.5 * tempString.length(), 12);
-        }
-        display.print(tempString);
-        display.write(0xF8); //degree symbol
-        String humidString = String(humidity, 0) + '%';
-        display.setTextSize(2);
-        if (temperature >= 80) {
-          display.setCursor(2, 48);
-        } else {
-          display.setCursor(64 - 5 * humidString.length() - (humidString.length() - 1), 48);
-        }
-        display.print(humidString);
-        if (temperature >= 80) { //heat index only valid for temp >= 80
-          //From https://meteor.geol.iastate.edu/~ckarsten/bufkit/apparent_temperature.html
-          String heatIndex = String(-42.38 + 2.049*temperature + 10.14*humidity + -0.2248*temperature*humidity + -0.006838*temperature*temperature + -0.05482*humidity*humidity + 0.001228*temperature*temperature*humidity + 0.0008528*temperature*humidity*humidity + -0.00000199*temperature*temperature*humidity*humidity, 1);
-          display.setCursor(128 - 10 * (heatIndex.length() + 1) - 2 * heatIndex.length() - 2, 48);
-          display.print(heatIndex);
-          display.write(0xF8);
-        }
+        thermometer.mainDisplay(display);
         display.display();
       } else if (screen.screen == 2 and disp) {
         disp = false;
         display.clearDisplay();
-        display.setTextSize(1);
-        display.setCursor(40, 0);
-        display.print("Settings");
-        if (settingsSelect == 0) {
-          display.fillRect(0, 8, 127, 18, WHITE);
-        } else {
-          display.fillRect(0, 26, 127, 9, WHITE);
-        }
-        display.setCursor(2, 9); //sample duration
-        display.setTextColor(settingsSelect == 0 ? BLACK : WHITE);
-        display.print("Sample time: ");
-        display.print(time);
-        display.print('s');
-        display.setCursor(7, 18);
-        display.print("Total time: ");
-        timeFormat(128 * time);
-        display.setCursor(2, 27); //stop recording
-        display.setTextColor(settingsSelect == 1 ? BLACK : WHITE);
-        display.print(stop ? "Restart" : "Stop");
-        display.setTextColor(WHITE);
+        thermometer.settingsDisplay(display);
         display.display();
       } else if (screen.screen > 2 and disp) {
         disp = false;
         display.clearDisplay();
-        for (uint8_t i = 0; i < place; i++) {
-          if (i == screen.screen - 3) { //selected
-            display.drawFastVLine(i, 0, 55, WHITE);
-            display.drawPixel(i, min(54, max(0, history[i] / 100 * -54 + 54)), BLACK);
-          } else { //normal
-            display.drawPixel(i, min(54, max(0, history[i] / 100 * -54 + 54)), WHITE);
-          }
-        }
-        display.drawFastHLine(0, 55, 128, WHITE);
-        display.setTextSize(1);
-        display.setCursor(0, 57); //time period
-        timeFormat((place - (screen.screen - 3)) * time + (int)((millis() - historyTimer) / 1000));
-        display.print("-");
-        timeFormat((place - (screen.screen - 2)) * time + (int)((millis() - historyTimer) / 1000));
-        display.print(": ");
-        display.print(String(history[screen.screen - 3], 1));
-        display.write(0xF8);
+        thermometer.historyDisplay(display);
         display.display();
       }
+
       if (screen.screen == 0) gameChanger();
-      screen.maxScreen = place + 3;
       if (screen.buttons()) {
-        if (digitalRead(4)) {
-          if (screen.screen == 1 and stop) { //remeasure
-            tempTimer = -1001;
+        if (digitalRead(5)) { //app selection
+          if (screen.screen == 1 and thermometer.stop) { //remeasure
+            thermometer.prepDisplay();
+          }
+          if (screen.screen == 2 and thermometer.historyScreenPlace != 0) {
+            screen.screen = 3;
+            thermometer.prepHistory(false);
           }
           if (screen.screen == 2) { //settings prep
-            settingsStart = true;
-            settingsSelect = 0;
+            thermometer.prepHistory(false);
+            thermometer.prepSettings();
           }
           disp = true;
-        } else if (digitalRead(5)) { //app selection
-          if (screen.screen == 1 and stop) { //remeasure
-            tempTimer = -1001;
+        } else if (digitalRead(4)) {
+          if (screen.screen == 1 and thermometer.stop) { //remeasure
+            thermometer.prepDisplay();
           }
           if (screen.screen == 2) { //settings prep
-            settingsStart = true;
-            settingsSelect = 0;
+            thermometer.prepSettings();
+          }
+          if (screen.screen == 3) {
+            if (thermometer.historyRecordPlace == 0) {
+              screen.screen = 2;
+            } else {
+              thermometer.prepHistory(true);
+            }
           }
           disp = true;
         } else if (digitalRead(3)) {
           if (screen.screen == 2) { //settings
-            if (settingsStart) { //select setting to change
-              settingsSelect = (settingsSelect + 1) % 2;
-            } else if (settingsSelect == 0) { //time change
-              time = max(time - 1, 1);
-              for (uint8_t i = 0; i < 128; i++) history[i] = -1;
-              place = 0;
-            } else if (settingsSelect == 1) { //stop change
-              stop = !stop;
-              if (!stop) { //clear
-                for (uint8_t i = 0; i < 128; i++) history[i] = -1;
-                place = 0;
-              }
-            }
-          } else if (screen.screen > 2) { //jump to start
-            screen.screen = 3;
+            thermometer.settingsChoice3();
+          } else if (screen.screen == 3) { //jump to start
+            thermometer.historyScreenMin();
           }
           if (screen.screen > 1) {
             disp = true;
           }
         } else if (digitalRead(2)) {
           if (screen.screen == 2) { //settings
-            if (settingsStart) { //confirm setting to change
-              settingsStart = false;
-            } else if (settingsSelect == 0) { //time change
-              time = min(time + 1, 300);
-              for (uint8_t i = 0; i < 128; i++) history[i] = -1;
-              place = 0;
-            } else if (settingsSelect == 1) { //stop change
-              stop = !stop;
-              if (!stop) { //clear
-                for (uint8_t i = 0; i < 128; i++) history[i] = -1;
-                place = 0;
-              }
-            }
-          } else if (screen.screen > 2) { //jump to end
-            screen.screen = place + 2; //max is max history recorded
+            thermometer.settingsChoice2();
+          } else if (screen.screen == 3) { //jump to end
+            thermometer.historyScreenMax();
           }
           if (screen.screen > 1) {
             disp = true;
@@ -1236,6 +1111,7 @@ void setup() {
   else if (app == cube) {
     Screen screen = Screen(2, 1);
     Cube cube = Cube();
+
     while (true) {
       if (screen.screen == 0 and disp) {
         disp = false;
@@ -1247,6 +1123,7 @@ void setup() {
         cube.run(display);
         display.display();
       }
+
       if (screen.screen == 0) gameChanger();
       if (screen.buttons()) {
         if (digitalRead(5)) { //app selection
