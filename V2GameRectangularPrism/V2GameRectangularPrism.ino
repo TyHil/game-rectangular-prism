@@ -134,9 +134,9 @@ void newhigh(int8_t level, uint8_t score) { //sets a new high score for Asteroid
 /* Game Selection Functions */
 
 void gameChangerDisplay() { //displays menu to change between different games
-  const String names[9] = {"Switch Game", "Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Num", "Level", "Fireworks", "Temp"}; //game names
+  const String names[NUM_GAMES + 1] = {"Switch Game", "Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Num", "Level", "Fireworks", "Temp", "Cube"}; //game names
   display.setTextSize(1);
-  for (uint8_t i = 0; i < 9; i++) { //game list
+  for (uint8_t i = 0; i < NUM_GAMES + 1; i++) { //game list
     display.setCursor((i == 0) ? 30 : ((i < 7) ? 1 : 68), (i == 0) ? 0 : (9 * ((i - 1) % 6) + 9));
     display.print(names[i]);
   }
@@ -148,7 +148,7 @@ void gameChangerDisplay() { //displays menu to change between different games
 }
 void gameChanger() { //update game selection and restart arduino on choice
   if (digitalRead(5)) {
-    game = (game + 1) % 8;
+    game = (game + 1) % NUM_GAMES;
     disp = true;
   } else if (digitalRead(2) or digitalRead(3)) {
     updateEEPROM(25, game);
@@ -1292,7 +1292,7 @@ void setup() {
   /*Game Unknown*/
 
   else {
-    game = (game + 1) % 7;
+    game = (game + 1) % NUM_GAMES;
     while (true) {
       if (disp) {
         disp = false;
