@@ -10,6 +10,7 @@
 #include "shipAsteroidLaser.h"
 #include "boards.h"
 #include "screen.h"
+#include "randomNum.h"
 #include "level.h"
 #include "fireworks.h"
 #include "thermometer.h"
@@ -338,7 +339,7 @@ void setup() {
         if (over or asteroids[i].pointInAsteroid(ship.X, ship.Y)) { //or the ship center are in an asteroid
           display.display();
           display.setCursor(40, 0);
-          display.print("App");
+          display.print("Game");
           display.setCursor(40, 21);
           display.print("Over");
           display.setCursor(45, 42);
@@ -853,7 +854,7 @@ void setup() {
         display.clearDisplay();
         display.setTextSize(2);
         display.setCursor(40, 10);
-        display.print("App");
+        display.print("Game");
         display.setCursor(40, 31);
         display.print("Over");
         display.display();
@@ -894,64 +895,37 @@ void setup() {
   /* Random Number Generator */
 
   else if (app == randomNum) {
-    int8_t level = 0;
-    uint64_t generalTimer = millis();
-    const String names[5] = {"Random Number", "Min", "Max", "Dec", "Result"}; //names
-    int16_t nums[3] = {0, 1, 0}; //min, max, and number of decimal places
-    float result = random(0, 2);
-    display.setTextSize(1);
+    Screen screen = Screen(5, 1);
+    RandomNum randomNum = RandomNum();
 
     while (true) {
       if (disp) {
         disp = false;
         display.clearDisplay();
-        if (level >= 0) {
-          for (uint8_t i = 0; i < 5; i++) { //print names
-            display.setCursor(1, 9 * i);
-            display.print(names[i]);
-            display.setCursor(40, 9 * i);
-            if (i > 0 and i < 4) display.print(nums[i - 1]);
-            else if (i == 4) display.print(result);
-          }
-          display.fillRect(0, 9 * (level + 1), names[level + 1].length() * 6 + 1, 8, WHITE); //highlight selection
-          display.setTextColor(BLACK);
-          display.setCursor(1, 9 * (level + 1));
-          display.print(names[level + 1]);
-          display.setTextColor(WHITE);
-        } else gameChangerDisplay();
+        if (screen.screen == 0) {
+          gameChangerDisplay();
+        } else if (screen.screen > 0) {
+          randomNum.display(display, screen.screen);
+        }
         display.display();
       }
 
-      if (millis() - generalTimer >= 100) {
-        if (digitalRead(4)) {
-          level = min(level + 1, 3);
-          generalTimer = millis();
+      if (screen.screen == 0) gameChanger();
+      if (screen.buttons()) {
+        if (digitalRead(5) or digitalRead(4) or digitalRead(3) or digitalRead(2)) {
           disp = true;
         }
-        if (level >= 0) {
-          if (digitalRead(5)) {
-            level = max(level - 1, -1);
-            generalTimer = millis();
-            disp = true;
-          } else if ((digitalRead(3) or digitalRead(2)) and level == 3) { //new result
-            result = (float) random(nums[0] * pow(10, nums[2]), nums[1] * pow(10, nums[2]) + 1) / pow(10, nums[2]);
-            disp = true;
-          } else if (digitalRead(3)) { //increase nums
-            nums[level]--;
-            nums[1] = max(nums[0] + 1, nums[1]);
-            nums[2] = min(max(nums[2], 0), 2);
-            generalTimer = millis();
-            disp = true;
-          } else if (digitalRead(2)) { //decrease nums
-            nums[level]++;
-            nums[0] = min(nums[0], nums[1] - 1);
-            nums[2] = min(max(nums[2], 0), 2);
-            generalTimer = millis();
-            disp = true;
+        if (screen.screen > 0) {
+          if ((digitalRead(3) or digitalRead(2)) and screen.screen == 4) { //new result
+            randomNum.generate();
+          } else if (digitalRead(3)) {
+            randomNum.decNums(screen.screen);
+          } else if (digitalRead(2)) {
+            randomNum.incNums(screen.screen);
           }
-        } else if (level == -1) gameChanger();
-        delay(50);
+        }
       }
+      delay(50);
     }
   }
 
