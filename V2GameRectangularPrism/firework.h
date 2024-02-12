@@ -2,6 +2,7 @@
   Firework library header for Fireworks
   Written by Tyler Gordon Hill
 */
+#pragma once
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>

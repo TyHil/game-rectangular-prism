@@ -1,9 +1,9 @@
 /*
-  Cube game implementation
+  Cube app implementation
   Written by Tyler Gordon Hill
 */
 #include "cube.h"
-const float r = 18  ;
+const float r = 18;
 const float px[16] = {-r,r,r,-r,-r,-r,r,r,r,r,r,-r,-r,-r,-r,r};
 const float py[16] = {r,r,r,r,r,-r,-r,r,r,-r,-r,-r,-r,r,-r,-r};
 const float pz[16] = {r,r,-r,-r,r,r,r,r,-r,-r,r,r,-r,-r,-r,-r};

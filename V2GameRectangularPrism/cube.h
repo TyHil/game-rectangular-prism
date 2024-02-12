@@ -1,5 +1,5 @@
 /*
-  Cube game header
+  Cube app header
   Written by Tyler Gordon Hill
 */
 #include <Wire.h>

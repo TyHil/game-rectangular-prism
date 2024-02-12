@@ -10,6 +10,8 @@
 #include "shipAsteroidLaser.h"
 #include "boards.h"
 #include "firework.h"
+#include "screen.h"
+#include "fireworks.h"
 #include "cube.h"
 #include <Arduino_LSM6DS3.h>
 #include <Adafruit_SHTC3.h>
@@ -1037,43 +1039,22 @@ void setup() {
   /* Fireworks */
 
   else if (game == fireworks) {
-    int8_t level = 1;
-    uint64_t generalTimer = millis(), betweenTimer = millis();
-    uint8_t betweenDur = 0;
-    Firework fireworks[10];// = Firework(random(0, 128), random(0, 64));
-    for (uint8_t i = 0; i < 10; i++) {
-      fireworks[i] = Firework();
-    }
+    Screen screen = Screen(2, 1);
+    Fireworks fireworks = Fireworks();
     while (true) {
-      if (level) {
-        display.clearDisplay();
-        if (millis() - betweenTimer >= betweenDur * 10) {
-          uint8_t i;
-          for (i = 0; i < 10 and !fireworks[i].offScreen; i++) {}
-          if (i < 10) {
-            fireworks[i].reset();
-          }
-          betweenDur = random(0, 50);
-          betweenTimer = millis();
-        }
-        for (uint8_t i = 0; i < 10; i++) {
-          fireworks[i].moveAndDisplay(display);
-        }
-        display.display();
-      } else if (disp) {
+      if (screen.screen == 0 and disp) {
         disp = false;
         display.clearDisplay();
         gameChangerDisplay();
         display.display();
+      } else if (screen.screen == 1) {
+        display.clearDisplay();
+        fireworks.display(display);
+        display.display();
       }
-      if (!level) gameChanger();
-      if (millis() - generalTimer >= 100) {
-        if (digitalRead(4)) { //level
-          level = 1;
-          generalTimer = millis();
-        } else if (digitalRead(5)) { //game selection
-          level = 0;
-          generalTimer = millis();
+      if (screen.screen == 0) gameChanger();
+      if (screen.buttons()) {
+        if (digitalRead(5)) { //game selection
           disp = true;
         }
       }
