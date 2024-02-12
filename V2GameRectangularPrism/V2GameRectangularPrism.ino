@@ -1067,10 +1067,9 @@ void setup() {
   /* Thermometer */
 
   else if (game == thermometer) {
-    int16_t level = 1;
+    Screen screen = Screen(3, 1);
     int8_t settingsSelect = 0; //option to control in settings
     bool settingsStart = true; //true on switch to settings page
-    uint64_t generalTimer = millis();
     uint64_t historyTimer = millis(); //when to save graph data
     int64_t tempTimer = -1001;
     float history[128];
@@ -1084,7 +1083,7 @@ void setup() {
     shtc3.begin();
     while (true) {
       //run every second on display page and in background when recording history
-      if ((!stop or level == 1) and millis() - tempTimer >= 1000) {
+      if ((!stop or screen.screen == 1) and millis() - tempTimer >= 1000) {
         tempTimer = millis();
         sensors_event_t _humidity, _temperature;
         shtc3.getEvent(&_humidity, &_temperature);
@@ -1094,7 +1093,7 @@ void setup() {
           running += temperature;
           count++;
         }
-        if (level == 1 or (level > 2 and !stop)) {
+        if (screen.screen == 1 or (screen.screen > 2 and !stop)) {
           disp = true;
         }
       }
@@ -1107,19 +1106,24 @@ void setup() {
             history[127] = running / count;
           } else {
             history[place] = running / count;
-            if (level > 2 and level - 2 == place) {
-              level++;
+            if (screen.screen > 2 and screen.screen - 2 == place) {
+              screen.screen++;
             }
             place++;
           }
           running = 0;
           count = 0;
-          if (level > 2) {
+          if (screen.screen > 2) {
             disp = true;
           }
         }
       }
-      if (level == 1 and disp) {
+      if (screen.screen == 0 and disp) {
+        disp = false;
+        display.clearDisplay();
+        gameChangerDisplay();
+        display.display();
+      } else if (screen.screen == 1 and disp) {
         disp = false;
         display.clearDisplay();
         String tempString = String(temperature, 1);
@@ -1148,7 +1152,7 @@ void setup() {
           display.write(0xF8);
         }
         display.display();
-      } else if (level == 2 and disp) {
+      } else if (screen.screen == 2 and disp) {
         disp = false;
         display.clearDisplay();
         display.setTextSize(1);
@@ -1172,11 +1176,11 @@ void setup() {
         display.print(stop ? "Restart" : "Stop");
         display.setTextColor(WHITE);
         display.display();
-      } else if (level > 2 and disp) {
+      } else if (screen.screen > 2 and disp) {
         disp = false;
         display.clearDisplay();
         for (uint8_t i = 0; i < place; i++) {
-          if (i == level - 3) { //selected
+          if (i == screen.screen - 3) { //selected
             display.drawFastVLine(i, 0, 55, WHITE);
             display.drawPixel(i, min(54, max(0, history[i] / 100 * -54 + 54)), BLACK);
           } else { //normal
@@ -1186,45 +1190,37 @@ void setup() {
         display.drawFastHLine(0, 55, 128, WHITE);
         display.setTextSize(1);
         display.setCursor(0, 57); //time period
-        timeFormat((place - (level - 3)) * time + (int)((millis() - historyTimer) / 1000));
+        timeFormat((place - (screen.screen - 3)) * time + (int)((millis() - historyTimer) / 1000));
         display.print("-");
-        timeFormat((place - (level - 2)) * time + (int)((millis() - historyTimer) / 1000));
+        timeFormat((place - (screen.screen - 2)) * time + (int)((millis() - historyTimer) / 1000));
         display.print(": ");
-        display.print(String(history[level - 3], 1));
+        display.print(String(history[screen.screen - 3], 1));
         display.write(0xF8);
         display.display();
-      } else if (level == 0 and disp) {
-        disp = false;
-        display.clearDisplay();
-        gameChangerDisplay();
-        display.display();
       }
-      if (!level) gameChanger();
-      if (millis() - generalTimer >= 100) {
+      if (screen.screen == 0) gameChanger();
+      screen.maxScreen = place + 3;
+      if (screen.buttons()) {
         if (digitalRead(4)) {
-          level = min(level + 1, place + 2); //max is max history recorded
-          if (level == 1 and stop) { //remeasure
+          if (screen.screen == 1 and stop) { //remeasure
             tempTimer = -1001;
           }
-          if (level == 2) { //settings prep
+          if (screen.screen == 2) { //settings prep
             settingsStart = true;
             settingsSelect = 0;
           }
-          generalTimer = millis();
           disp = true;
         } else if (digitalRead(5)) { //game selection
-          level = max(level - 1, 0);
-          if (level == 1 and stop) { //remeasure
+          if (screen.screen == 1 and stop) { //remeasure
             tempTimer = -1001;
           }
-          if (level == 2) { //settings prep
+          if (screen.screen == 2) { //settings prep
             settingsStart = true;
             settingsSelect = 0;
           }
-          generalTimer = millis();
           disp = true;
         } else if (digitalRead(3)) {
-          if (level == 2) { //settings
+          if (screen.screen == 2) { //settings
             if (settingsStart) { //select setting to change
               settingsSelect = (settingsSelect + 1) % 2;
             } else if (settingsSelect == 0) { //time change
@@ -1238,15 +1234,14 @@ void setup() {
                 place = 0;
               }
             }
-          } else if (level > 2) { //jump to start
-            level = 3;
+          } else if (screen.screen > 2) { //jump to start
+            screen.screen = 3;
           }
-          if (level > 1) {
-            generalTimer = millis();
+          if (screen.screen > 1) {
             disp = true;
           }
         } else if (digitalRead(2)) {
-          if (level == 2) { //settings
+          if (screen.screen == 2) { //settings
             if (settingsStart) { //confirm setting to change
               settingsStart = false;
             } else if (settingsSelect == 0) { //time change
@@ -1260,11 +1255,10 @@ void setup() {
                 place = 0;
               }
             }
-          } else if (level > 2) { //jump to end
-            level = place + 2; //max is max history recorded
+          } else if (screen.screen > 2) { //jump to end
+            screen.screen = place + 2; //max is max history recorded
           }
-          if (level > 1) {
-            generalTimer = millis();
+          if (screen.screen > 1) {
             disp = true;
           }
         }
@@ -1278,28 +1272,22 @@ void setup() {
   /* Cube */
 
   else if (game == cube) {
-    int8_t level = 1;
-    uint64_t generalTimer = millis();
+    Screen screen = Screen(2, 1);
     Cube cube = Cube();
     while (true) {
-      if (level) {
-        display.clearDisplay();
-        cube.run(display);
-        display.display();
-      } else if (disp) {
+      if (screen.screen == 0 and disp) {
         disp = false;
         display.clearDisplay();
         gameChangerDisplay();
         display.display();
+      } else if (screen.screen == 1) {
+        display.clearDisplay();
+        cube.run(display);
+        display.display();
       }
-      if (!level) gameChanger();
-      if (millis() - generalTimer >= 100) {
-        if (digitalRead(4)) { //level
-          level = 1;
-          generalTimer = millis();
-        } else if (digitalRead(5)) { //game selection
-          level = 0;
-          generalTimer = millis();
+      if (screen.screen == 0) gameChanger();
+      if (screen.buttons()) {
+        if (digitalRead(5)) { //game selection
           disp = true;
         }
       }
