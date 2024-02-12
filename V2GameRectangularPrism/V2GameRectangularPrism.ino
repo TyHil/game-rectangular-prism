@@ -10,8 +10,10 @@
 #include "shipAsteroidLaser.h"
 #include "boards.h"
 #include "firework.h"
+#include "cube.h"
 #include <Arduino_LSM6DS3.h>
 #include <Adafruit_SHTC3.h>
+#define NUM_GAMES 9
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 uint8_t game; //which game is being played
 boolean disp = true; //limits display refreshes when nothing has changed
@@ -1281,6 +1283,40 @@ void setup() {
             generalTimer = millis();
             disp = true;
           }
+        }
+      }
+      delay(50);
+    }
+  }
+
+
+
+  /*Cube*/
+
+  else if (game == 8) {
+    int8_t level = 1;
+    uint64_t generalTimer = millis();
+    Cube cube = Cube();
+    while (true) {
+      if (level) {
+        display.clearDisplay();
+        cube.run(display);
+        display.display();
+      } else if (disp) {
+        disp = false;
+        display.clearDisplay();
+        gameChangerDisplay();
+        display.display();
+      }
+      if (!level) gameChanger();
+      if (millis() - generalTimer >= 100) {
+        if (digitalRead(4)) { //level
+          level = 1;
+          generalTimer = millis();
+        } else if (digitalRead(5)) { //game selection
+          level = 0;
+          generalTimer = millis();
+          disp = true;
         }
       }
       delay(50);
