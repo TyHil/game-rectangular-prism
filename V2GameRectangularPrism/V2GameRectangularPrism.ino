@@ -9,18 +9,16 @@
 */
 #include "shipAsteroidLaser.h"
 #include "boards.h"
-#include "firework.h"
 #include "screen.h"
 #include "level.h"
 #include "fireworks.h"
 #include "cube.h"
 #include <Arduino_LSM6DS3.h>
 #include <Adafruit_SHTC3.h>
-enum Game { asteroids, astroParty, clonium, minesweeper, randomNum, level, fireworks, thermometer, cube, NUM_GAMES };
-#define NUM_GAMES 9
+enum App { asteroids, astroParty, clonium, minesweeper, randomNum, level, fireworks, thermometer, cube, NUM_APPS };
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
-Game game; //which game is being played
-boolean disp = true; //limits display refreshes when nothing has changed
+App app; //which app is being used
+bool disp = true; //limits display refreshes when nothing has changed
 
 
 
@@ -37,7 +35,7 @@ void waitAllUnclick() { //waits until none of the buttons are clicked
 
 /* EEPROM Functions */
 
-byte readEEPROM(unsigned int location) { //read the value of a spot in EEPROM for highscores and last game played
+byte readEEPROM(unsigned int location) { //read the value of a spot in EEPROM
   Wire.beginTransmission(0x50);
   Wire.write((int)(location >> 8)); //MSB
   Wire.write((int)(location & 0xFF)); //LSB
@@ -46,7 +44,7 @@ byte readEEPROM(unsigned int location) { //read the value of a spot in EEPROM fo
   if (Wire.available()) return Wire.read();
   else return 0;
 }
-void updateEEPROM(unsigned int location, byte data) { //update the value of a spot in EEPROM for hghscores and last game played
+void updateEEPROM(unsigned int location, byte data) { //update the value of a spot in EEPROM
   if (readEEPROM(location) != data) { //avoid writing if data is the same
     Wire.beginTransmission(0x50);
     Wire.write((int)(location >> 8)); //MSB
@@ -137,29 +135,29 @@ void newhigh(int8_t level, uint8_t score) { //sets a new high score for Asteroid
 
 
 
-/* Game Selection Functions */
+/* App Selection Functions */
 
 void gameChangerDisplay() { //displays menu to change between different games
-  const String names[NUM_GAMES + 1] = {"Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Num", "Level", "Fireworks", "Temp", "Cube"}; //game names
+  const String names[NUM_APPS + 1] = {"Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Num", "Level", "Fireworks", "Temp", "Cube"}; //app names
   display.setTextSize(1);
   display.setCursor(30, 0);
-  display.print("Switch Game");
-  for (uint8_t i = 0; i < NUM_GAMES; i++) { //game list
+  display.print("Switch App");
+  for (uint8_t i = 0; i < NUM_APPS; i++) { //app list
     display.setCursor((i < 6) ? 1 : 68, 9 * (i % 6) + 9);
     display.print(names[i]);
   }
-  display.fillRect((game < 6) ? 0 : 67, 9 * (game % 6 + 1) - 1, 67, 9, WHITE); //highlight current selection
-  display.setCursor((game < 6) ? 1 : 68, 9 * (game % 6 + 1));
+  display.fillRect((app < 6) ? 0 : 67, 9 * (app % 6 + 1) - 1, 67, 9, WHITE); //highlight current selection
+  display.setCursor((app < 6) ? 1 : 68, 9 * (app % 6 + 1));
   display.setTextColor(BLACK);
-  display.print(names[game]);
+  display.print(names[app]);
   display.setTextColor(WHITE);
 }
-void gameChanger() { //update game selection and restart arduino on choice
+void gameChanger() { //update app selection and restart arduino on choice
   if (digitalRead(5)) {
-    game = static_cast<Game>((game + 1) % NUM_GAMES);
+    app = static_cast<App>((app + 1) % NUM_APPS);
     disp = true;
   } else if (digitalRead(2) or digitalRead(3)) {
-    updateEEPROM(25, game);
+    updateEEPROM(25, app);
     digitalWrite(6, LOW);
   }
 }
@@ -195,14 +193,14 @@ void setup() {
   pinMode(4, INPUT_PULLUP);
   pinMode(5, INPUT_PULLUP);
   display.setTextColor(WHITE);
-  game = static_cast<Game>(readEEPROM(25)); //read game last played
+  app = static_cast<App>(readEEPROM(25)); //read app last played
   delay(100);
 
 
 
   /* Asteroids */
 
-  if (game == asteroids) {
+  if (app == asteroids) {
     int8_t level = 1;
     uint64_t generalTimer = millis();
     bool tiltToTurn = 0;
@@ -213,8 +211,8 @@ void setup() {
         disp = false;
         display.clearDisplay();
         if (level == -1) high(); //highscores
-        else if (level == -2) gameChangerDisplay(); //game selection
-        else if (level == 0) { //game selection
+        else if (level == -2) gameChangerDisplay(); //app selection
+        else if (level == 0) { //settings
           display.setTextSize(1); //top row text
           display.setCursor(40, 0);
           display.print("Settings");
@@ -273,7 +271,7 @@ void setup() {
       _level.correctPitch();
     }
 
-    /*Game*/
+    /*App*/
     while (true) {
       display.clearDisplay();
       if (millis() - shipTurnTiming >= 50) {
@@ -355,7 +353,7 @@ void setup() {
         if (over or asteroids[i].pointInAsteroid(ship.X, ship.Y)) { //or the ship center are in an asteroid
           display.display();
           display.setCursor(40, 0);
-          display.print("Game");
+          display.print("App");
           display.setCursor(40, 21);
           display.print("Over");
           display.setCursor(45, 42);
@@ -378,7 +376,7 @@ void setup() {
 
   /* Astro Party */
 
-  else if (game == astroParty) { //comments are more sparse as the code is largely similar to Asteroids
+  else if (app == astroParty) { //comments are more sparse as the code is largely similar to Asteroids
     int8_t level = 1;
     uint64_t generalTimer = millis();
 
@@ -394,7 +392,7 @@ void setup() {
           display.setTextSize(4);
           display.setCursor(5, 20);
           display.print("Start");
-        } else gameChangerDisplay(); //game selection
+        } else gameChangerDisplay(); //app selection
         display.display();
       }
       if (millis() - generalTimer >= 100) {
@@ -426,7 +424,7 @@ void setup() {
     for (uint8_t i = 4; i < 8; i++) asteroids[i] = Asteroid(16, i == 4 or i == 5, 1);
     for (uint8_t i = 8; i < 12; i++) asteroids[i] = Asteroid(0, 0, 1);
 
-    /*Game*/
+    /*App*/
     while (true) {
       display.clearDisplay();
       for (uint8_t i = 0; i < 12; i++) { //asteroid movement and display
@@ -571,7 +569,7 @@ void setup() {
 
   /* Clonium */
 
-  else if (game == clonium) {
+  else if (app == clonium) {
     const String names[7] = {"X", "Y", "Small", "Large", "2P", "1P", "0P"}; //gamemodes
     uint8_t nums[2] = {8, 4};
     int8_t level = 4;
@@ -611,7 +609,7 @@ void setup() {
           display.setTextSize(1);
           display.print(names[level]);
           display.setTextColor(WHITE);
-        } else gameChangerDisplay(); //game selection
+        } else gameChangerDisplay(); //app selection
         display.display();
       }
       if (millis() - generalTimer >= 100) {
@@ -658,7 +656,7 @@ void setup() {
     display.display();
     waitAllUnclick();
 
-    /*Game*/
+    /*App*/
     while (true) {
       if ((level >= 5 and turn) or level == 6) { //CPU
         board.CPUMove(turn, display);
@@ -738,7 +736,7 @@ void setup() {
 
   /* Minesweeper */
 
-  else if (game == minesweeper) {
+  else if (app == minesweeper) {
     int8_t level = 4;
     uint64_t generalTimer = millis();
     uint8_t nums[3] = {8, 4, 5};
@@ -826,7 +824,7 @@ void setup() {
     waitAllUnclick();
     uint64_t flashTime = 0, scoreTime = millis(); //timers for flashing selection and score
 
-    /*Game*/
+    /*App*/
     while (true) {
       while (digitalRead(2) == 0 or (board.data[mx][my] != 9 and board.data[mx][my] != 11)) { //choose place
         if (disp) { //only display if something changes
@@ -870,7 +868,7 @@ void setup() {
         display.clearDisplay();
         display.setTextSize(2);
         display.setCursor(40, 10);
-        display.print("Game");
+        display.print("App");
         display.setCursor(40, 31);
         display.print("Over");
         display.display();
@@ -910,7 +908,7 @@ void setup() {
 
   /* Random Number Generator */
 
-  else if (game == randomNum) {
+  else if (app == randomNum) {
     int8_t level = 0;
     uint64_t generalTimer = millis();
     const String names[5] = {"Random Number", "Min", "Max", "Dec", "Result"}; //names
@@ -974,7 +972,7 @@ void setup() {
 
   /* Level */
 
-  else if (game == level) {
+  else if (app == level) {
     Screen screen = Screen(2, 1);
     Level level = Level();
     while (true) {
@@ -988,7 +986,7 @@ void setup() {
       }
       if (screen.screen == 0) gameChanger();
       if (screen.buttons()) {
-        if (digitalRead(5)) { //game selection
+        if (digitalRead(5)) { //app selection
           disp = true;
         } else if (digitalRead(3) or digitalRead(2)) { //calibrate
           level.correctPitch();
@@ -1002,7 +1000,7 @@ void setup() {
 
   /* Fireworks */
 
-  else if (game == fireworks) {
+  else if (app == fireworks) {
     Screen screen = Screen(2, 1);
     Fireworks fireworks = Fireworks();
     while (true) {
@@ -1018,7 +1016,7 @@ void setup() {
       }
       if (screen.screen == 0) gameChanger();
       if (screen.buttons()) {
-        if (digitalRead(5)) { //game selection
+        if (digitalRead(5)) { //app selection
           disp = true;
         }
       }
@@ -1030,7 +1028,7 @@ void setup() {
 
   /* Thermometer */
 
-  else if (game == thermometer) {
+  else if (app == thermometer) {
     Screen screen = Screen(3, 1);
     int8_t settingsSelect = 0; //option to control in settings
     bool settingsStart = true; //true on switch to settings page
@@ -1174,7 +1172,7 @@ void setup() {
             settingsSelect = 0;
           }
           disp = true;
-        } else if (digitalRead(5)) { //game selection
+        } else if (digitalRead(5)) { //app selection
           if (screen.screen == 1 and stop) { //remeasure
             tempTimer = -1001;
           }
@@ -1235,7 +1233,7 @@ void setup() {
 
   /* Cube */
 
-  else if (game == cube) {
+  else if (app == cube) {
     Screen screen = Screen(2, 1);
     Cube cube = Cube();
     while (true) {
@@ -1251,7 +1249,7 @@ void setup() {
       }
       if (screen.screen == 0) gameChanger();
       if (screen.buttons()) {
-        if (digitalRead(5)) { //game selection
+        if (digitalRead(5)) { //app selection
           disp = true;
         }
       }
@@ -1261,7 +1259,7 @@ void setup() {
 
 
 
-  /* Game Unknown */
+  /* App Unknown */
 
   else {
     while (true) {
