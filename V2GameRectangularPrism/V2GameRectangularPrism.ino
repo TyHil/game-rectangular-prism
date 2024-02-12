@@ -11,6 +11,7 @@
 #include "boards.h"
 #include "firework.h"
 #include "screen.h"
+#include "level.h"
 #include "fireworks.h"
 #include "cube.h"
 #include <Arduino_LSM6DS3.h>
@@ -165,20 +166,6 @@ void gameChanger() { //update game selection and restart arduino on choice
 
 
 
-/* IMU Functions */
-
-float getPitch() {
-  if (IMU.accelerationAvailable()) {
-    float accelX, accelY, accelZ;
-    IMU.readAcceleration(accelX, accelY, accelZ);
-    return accelX / sqrt(accelY * accelY + accelZ * accelZ); //slope of level line
-  } else {
-    return 0;
-  }
-}
-
-
-
 /* Thermometer Functions */
 
 void timeFormat(int seconds) {
@@ -280,10 +267,10 @@ void setup() {
     for (uint8_t i = 2; i < level + 2; i++) asteroids[i] = Asteroid(16, 0, 0);
     for (uint8_t i = level + 2; i < 2 * (level + 1); i++) asteroids[i] = Asteroid(0, 0, 0);
     uint64_t laserButtonTiming = millis(), shipTurnTiming = millis(), scoreTime = millis(); //timer for button presses and score
-    float pitchCorrection;
+    Level _level;
     if (tiltToTurn) {
-      IMU.begin();
-      pitchCorrection = getPitch();
+      _level = Level();
+      _level.correctPitch();
     }
 
     /*Game*/
@@ -291,7 +278,7 @@ void setup() {
       display.clearDisplay();
       if (millis() - shipTurnTiming >= 50) {
         if (tiltToTurn) { //turning
-          int8_t angle = atan(getPitch() - pitchCorrection) * 180 / M_PI; //degrees
+          int8_t angle = atan(_level.getPitch()) * 180 / M_PI; //degrees
           if (angle > 2 or angle < -2) {
             ship.turn((M_PI * min(angle, 20)) / (8 * 20));
           }
@@ -988,46 +975,23 @@ void setup() {
   /* Level */
 
   else if (game == level) {
-    int8_t level = 1;
-    uint64_t generalTimer = millis();
-    float pitch = 0, pitchCorrection = 0; //calibration
-    IMU.begin();
+    Screen screen = Screen(2, 1);
+    Level level = Level();
     while (true) {
-      if (level) {
-        if (IMU.accelerationAvailable()) {
-          display.clearDisplay();
-          pitch = getPitch();
-          int8_t angle = atan(pitch - pitchCorrection) * 180 / M_PI; //degrees
-          display.setTextSize(4);
-          display.setCursor(64 - 10 * (String(angle).length() + 1) - 2 * String(angle).length(), 16);
-          display.print(angle);
-          display.write(0xF8);
-          for (uint8_t x = 0; x < 128; x++) {
-            for (int16_t y = min(max((pitch - pitchCorrection) * (x - 64) + 32, 0), 66) - 2; y < 64; y++) { //for pixels past level line
-              display.drawPixel(x, y, !display.getPixel(x, y)); //invert color
-            }
-          }
-          display.display();
-        }
-      } else if (disp) {
+      if (screen.screen == 0 and disp) {
         disp = false;
         display.clearDisplay();
         gameChangerDisplay();
         display.display();
+      } else if (screen.screen == 1) {
+        level.display(display);
       }
-      if (!level) gameChanger();
-      if (millis() - generalTimer >= 100) {
-        if (digitalRead(4)) { //level
-          level = 1;
-          generalTimer = millis();
-        } else if (digitalRead(5)) { //game selection
-          level = 0;
-          generalTimer = millis();
+      if (screen.screen == 0) gameChanger();
+      if (screen.buttons()) {
+        if (digitalRead(5)) { //game selection
           disp = true;
         } else if (digitalRead(3) or digitalRead(2)) { //calibrate
-          pitchCorrection = pitch;
-          generalTimer = millis();
-          disp = true;
+          level.correctPitch();
         }
       }
       delay(50);
