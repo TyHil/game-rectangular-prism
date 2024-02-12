@@ -211,7 +211,7 @@ void setup() {
 
 
 
-  /*Asteroids*/
+  /* Asteroids */
 
   if (game == asteroids) {
     int8_t level = 1;
@@ -387,7 +387,7 @@ void setup() {
 
 
 
-  /*Astro Party*/
+  /* Astro Party */
 
   else if (game == astroParty) { //comments are more sparse as the code is largely similar to Asteroids
     int8_t level = 1;
@@ -580,7 +580,7 @@ void setup() {
 
 
 
-  /*Clonium*/
+  /* Clonium */
 
   else if (game == clonium) {
     const String names[7] = {"X", "Y", "Small", "Large", "2P", "1P", "0P"}; //gamemodes
@@ -747,7 +747,7 @@ void setup() {
 
 
 
-  /*Minesweeper*/
+  /* Minesweeper */
 
   else if (game == minesweeper) {
     int8_t level = 4;
@@ -919,7 +919,7 @@ void setup() {
 
 
 
-  /*Random Number Generator*/
+  /* Random Number Generator */
 
   else if (game == randomNum) {
     int8_t level = 0;
@@ -983,7 +983,7 @@ void setup() {
 
 
 
-  /*Level*/
+  /* Level */
 
   else if (game == level) {
     int8_t level = 1;
@@ -1034,7 +1034,7 @@ void setup() {
 
 
 
-  /*Fireworks*/
+  /* Fireworks */
 
   else if (game == fireworks) {
     int8_t level = 1;
@@ -1083,7 +1083,7 @@ void setup() {
   
 
 
-  /*Thermometer*/
+  /* Thermometer */
 
   else if (game == thermometer) {
     int16_t level = 1;
@@ -1294,7 +1294,7 @@ void setup() {
 
 
 
-  /*Cube*/
+  /* Cube */
 
   else if (game == cube) {
     int8_t level = 1;
@@ -1328,7 +1328,7 @@ void setup() {
 
 
 
-  /*Game Unknown*/
+  /* Game Unknown */
 
   else {
     while (true) {
