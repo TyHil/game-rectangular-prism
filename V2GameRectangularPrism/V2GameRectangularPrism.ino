@@ -13,9 +13,10 @@
 #include "cube.h"
 #include <Arduino_LSM6DS3.h>
 #include <Adafruit_SHTC3.h>
+enum Game { asteroids, astroParty, clonium, minesweeper, randomNum, level, fireworks, thermometer, cube, NUM_GAMES };
 #define NUM_GAMES 9
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
-uint8_t game; //which game is being played
+Game game; //which game is being played
 boolean disp = true; //limits display refreshes when nothing has changed
 
 
@@ -136,21 +137,23 @@ void newhigh(int8_t level, uint8_t score) { //sets a new high score for Asteroid
 /* Game Selection Functions */
 
 void gameChangerDisplay() { //displays menu to change between different games
-  const String names[NUM_GAMES + 1] = {"Switch Game", "Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Num", "Level", "Fireworks", "Temp", "Cube"}; //game names
+  const String names[NUM_GAMES + 1] = {"Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Num", "Level", "Fireworks", "Temp", "Cube"}; //game names
   display.setTextSize(1);
-  for (uint8_t i = 0; i < NUM_GAMES + 1; i++) { //game list
-    display.setCursor((i == 0) ? 30 : ((i < 7) ? 1 : 68), (i == 0) ? 0 : (9 * ((i - 1) % 6) + 9));
+  display.setCursor(30, 0);
+  display.print("Switch Game");
+  for (uint8_t i = 0; i < NUM_GAMES; i++) { //game list
+    display.setCursor((i < 6) ? 1 : 68, 9 * (i % 6) + 9);
     display.print(names[i]);
   }
   display.fillRect((game < 6) ? 0 : 67, 9 * (game % 6 + 1) - 1, 67, 9, WHITE); //highlight current selection
   display.setCursor((game < 6) ? 1 : 68, 9 * (game % 6 + 1));
   display.setTextColor(BLACK);
-  display.print(names[game + 1]);
+  display.print(names[game]);
   display.setTextColor(WHITE);
 }
 void gameChanger() { //update game selection and restart arduino on choice
   if (digitalRead(5)) {
-    game = (game + 1) % NUM_GAMES;
+    game = static_cast<Game>((game + 1) % NUM_GAMES);
     disp = true;
   } else if (digitalRead(2) or digitalRead(3)) {
     updateEEPROM(25, game);
@@ -203,14 +206,14 @@ void setup() {
   pinMode(4, INPUT_PULLUP);
   pinMode(5, INPUT_PULLUP);
   display.setTextColor(WHITE);
-  game = readEEPROM(25); //read game last played
+  game = static_cast<Game>(readEEPROM(25)); //read game last played
   delay(100);
 
 
 
   /*Asteroids*/
 
-  if (game == 0) {
+  if (game == asteroids) {
     int8_t level = 1;
     uint64_t generalTimer = millis();
     bool tiltToTurn = 0;
@@ -386,7 +389,7 @@ void setup() {
 
   /*Astro Party*/
 
-  else if (game == 1) { //comments are more sparse as the code is largely similar to Asteroids
+  else if (game == astroParty) { //comments are more sparse as the code is largely similar to Asteroids
     int8_t level = 1;
     uint64_t generalTimer = millis();
 
@@ -579,7 +582,7 @@ void setup() {
 
   /*Clonium*/
 
-  else if (game == 2) {
+  else if (game == clonium) {
     const String names[7] = {"X", "Y", "Small", "Large", "2P", "1P", "0P"}; //gamemodes
     uint8_t nums[2] = {8, 4};
     int8_t level = 4;
@@ -746,7 +749,7 @@ void setup() {
 
   /*Minesweeper*/
 
-  else if (game == 3) {
+  else if (game == minesweeper) {
     int8_t level = 4;
     uint64_t generalTimer = millis();
     uint8_t nums[3] = {8, 4, 5};
@@ -918,7 +921,7 @@ void setup() {
 
   /*Random Number Generator*/
 
-  else if (game == 4) {
+  else if (game == randomNum) {
     int8_t level = 0;
     uint64_t generalTimer = millis();
     const String names[5] = {"Random Number", "Min", "Max", "Dec", "Result"}; //names
@@ -982,7 +985,7 @@ void setup() {
 
   /*Level*/
 
-  else if (game == 5) {
+  else if (game == level) {
     int8_t level = 1;
     uint64_t generalTimer = millis();
     float pitch = 0, pitchCorrection = 0; //calibration
@@ -1033,7 +1036,7 @@ void setup() {
 
   /*Fireworks*/
 
-  else if (game == 6) {
+  else if (game == fireworks) {
     int8_t level = 1;
     uint64_t generalTimer = millis(), betweenTimer = millis();
     uint8_t betweenDur = 0;
@@ -1082,7 +1085,7 @@ void setup() {
 
   /*Thermometer*/
 
-  else if (game == 7) {
+  else if (game == thermometer) {
     int16_t level = 1;
     int8_t settingsSelect = 0; //option to control in settings
     bool settingsStart = true; //true on switch to settings page
@@ -1293,7 +1296,7 @@ void setup() {
 
   /*Cube*/
 
-  else if (game == 8) {
+  else if (game == cube) {
     int8_t level = 1;
     uint64_t generalTimer = millis();
     Cube cube = Cube();
@@ -1328,7 +1331,6 @@ void setup() {
   /*Game Unknown*/
 
   else {
-    game = (game + 1) % NUM_GAMES;
     while (true) {
       if (disp) {
         disp = false;
