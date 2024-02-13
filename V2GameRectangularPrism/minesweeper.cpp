@@ -2,8 +2,8 @@
   Minesweeper app implementation
   Written by Tyler Gordon Hill
 */
-#include "helper.h"
 #include "minesweeper.h"
+#include "helper.h"
 const String names[6] = {"X", "Y", "Mines", "Start", "Small", "Large"};
 
 void displayMinesweeperSetup(Adafruit_SSD1306 & display, int16_t screen, uint8_t XDim, uint8_t YDim, uint8_t mines) {
