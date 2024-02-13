@@ -2,6 +2,7 @@
   Ship, asteroid, and laser, library header for Asteroids and Astro Party
   Written by Tyler Gordon Hill
 */
+#pragma once
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>

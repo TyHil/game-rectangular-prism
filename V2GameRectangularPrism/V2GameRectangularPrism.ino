@@ -7,9 +7,11 @@
   Written by Tyler Gordon Hill
   Version 7.0
 */
-#include "shipAsteroidLaser.h"
-#include "boards.h"
+#include "helper.h"
 #include "screen.h"
+#include "shipAsteroidLaser.h"
+#include "asteroids.h"
+#include "boards.h"
 #include "randomNum.h"
 #include "level.h"
 #include "fireworks.h"
@@ -19,119 +21,6 @@ enum App { asteroids, astroParty, clonium, minesweeper, randomNum, level, firewo
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 App app; //which app is being used
 bool disp = true; //limits display refreshes when nothing has changed
-
-
-
-/* Wait Functions */
-
-void waitAnyClick() { //waits until any button is pressed
-  while (digitalRead(2) == 0 and digitalRead(3) == 0 and digitalRead(4) == 0 and digitalRead(5) == 0) {}
-}
-void waitAllUnclick() { //waits until none of the buttons are clicked
-  while (digitalRead(2) or digitalRead(3) or digitalRead(4) or digitalRead(5)) {}
-}
-
-
-
-/* EEPROM Functions */
-
-byte readEEPROM(unsigned int location) { //read the value of a spot in EEPROM
-  Wire.beginTransmission(0x50);
-  Wire.write((int)(location >> 8)); //MSB
-  Wire.write((int)(location & 0xFF)); //LSB
-  Wire.endTransmission();
-  Wire.requestFrom(0x50, 1);
-  if (Wire.available()) return Wire.read();
-  else return 0;
-}
-void updateEEPROM(unsigned int location, byte data) { //update the value of a spot in EEPROM
-  if (readEEPROM(location) != data) { //avoid writing if data is the same
-    Wire.beginTransmission(0x50);
-    Wire.write((int)(location >> 8)); //MSB
-    Wire.write((int)(location & 0xFF)); //LSB
-    Wire.write(data);
-    Wire.endTransmission();
-    delay(5);
-  }
-}
-
-
-
-/* Asteroids Functions */
-
-void high() { //displays list of high scores for Asteroids
-  display.setTextSize(1); //top row text
-  display.setCursor(30, 0);
-  display.print(" High Scores");
-  display.setCursor(0, 9);
-  display.print("Place");
-  display.setCursor(35, 9);
-  display.print("Name");
-  display.setCursor(62, 9);
-  display.print("Level");
-  display.setCursor(95, 9);
-  display.print("Score");
-  const uint8_t xVals[5] = {35, 41, 47, 62, 95};
-  for (uint8_t i = 0; i < 5; i++) { //top 5 high scores
-    display.setCursor(0, 10 + 9 * (i + 1));
-    display.print(i + 1); //place
-    for (uint8_t j = 0; j < 5; j++) {
-      display.setCursor(xVals[j], 10 + 9 * (i + 1));
-      if (j < 3) display.print(char(readEEPROM(5 * i + j))); //name
-      else if (j == 3) {
-        display.print(readEEPROM(5 * i + 3)); //level
-        if (readEEPROM(5 * i + 4) >= 7 * readEEPROM(5 * i + 3) + 6) display.print("W"); //win/loss
-        else display.print("L");
-      } else display.print(readEEPROM(5 * i + j)); //score
-    }
-  }
-}
-void newhigh(int8_t level, uint8_t score) { //sets a new high score for Asteroids
-  int8_t i; //move lesser high scores down
-  for (i = 3; i >= 0; i--) if (score > readEEPROM(5 * i + 4) or (score == readEEPROM(5 * i + 4) and level > readEEPROM(5 * i + 3))) for (uint8_t j = 0; j < 5; j++) updateEEPROM(5 * (i + 1) + j, readEEPROM(5 * i + j));
-    else break;
-  i++;
-  uint8_t name[3] = {65, 65, 65}; //name storage
-  uint64_t generalTimer = 0;
-  for (uint8_t k = 0; k < 3; k++) { //name choice
-    delay(200);
-    while (digitalRead(2) == 0 and digitalRead(3) == 0) {
-      display.clearDisplay(); //print directions
-      display.setCursor(45, 0);
-      display.print("New");
-      display.setCursor(15, 21);
-      display.print("High Score");
-      display.setCursor(45, 42);
-      for (uint8_t l = 0; l < 3; l++) { //pring current name
-        display.print(char(name[l]));
-      }
-      display.fillRect(12 * k + 44, 41, 12, 16, WHITE); //fill current selection
-      display.setCursor(12 * k + 45, 42);
-      display.setTextColor(BLACK);
-      display.print(char(name[k]));
-      display.setTextColor(WHITE);
-      if (millis() - generalTimer >= 100) { //move current selection down
-        if (digitalRead(5)) {
-          name[k] = max(name[k] - 1, 65);
-          generalTimer = millis();
-        } else if (digitalRead(4)) { //up
-          name[k] = min(name[k] + 1, 90);
-          generalTimer = millis();
-        }
-      }
-      display.display();
-    }
-  }
-  for (uint8_t j = 0; j < 3; j++) updateEEPROM(5 * i + j, name[j]); //set new high score in EEPROM
-  updateEEPROM(5 * i + 3, level);
-  updateEEPROM(5 * i + 4, score);
-  display.clearDisplay();
-  high(); //display high scores
-  display.display();
-  delay(100);
-  waitAnyClick();
-  delay(100);
-}
 
 
 
@@ -152,6 +41,7 @@ void gameChangerDisplay() { //displays menu to change between different games
   display.print(names[app]);
   display.setTextColor(WHITE);
 }
+
 void gameChanger() { //update app selection and restart arduino on choice
   if (digitalRead(5)) {
     app = static_cast<App>((app + 1) % NUM_APPS);
@@ -179,7 +69,7 @@ void setup() {
   pinMode(4, INPUT_PULLUP);
   pinMode(5, INPUT_PULLUP);
   display.setTextColor(WHITE);
-  app = static_cast<App>(readEEPROM(25)); //read app last played
+  app = static_cast<App>(readEEPROM(25)); //read app last used
   delay(100);
 
 
@@ -187,175 +77,41 @@ void setup() {
   /* Asteroids */
 
   if (app == asteroids) {
-    int8_t level = 1;
-    uint64_t generalTimer = millis();
-    bool tiltToTurn = 0;
+    Screen screen = Screen(-2, MAX_LEVEL, 1);
+    Asteroids asteroids = Asteroids();
 
     /*Setup*/
-    while ((digitalRead(2) == 0 and digitalRead(3) == 0) or level == 0 or level == -1 or level == -2) { //menu and level choice
+    while ((digitalRead(2) == 0 and digitalRead(3) == 0) or screen.screen == 0 or screen.screen == -1 or screen.screen == -2) { //menu and level choice
       if (disp) { //only display if something changes
         disp = false;
         display.clearDisplay();
-        if (level == -1) high(); //highscores
-        else if (level == -2) gameChangerDisplay(); //app selection
-        else if (level == 0) { //settings
-          display.setTextSize(1); //top row text
-          display.setCursor(40, 0);
-          display.print("Settings");
-          if (tiltToTurn) {
-            display.fillRect(0, 8, 9, 9, WHITE);
-          } else {
-            display.drawRect(0, 8, 9, 9, WHITE);
-          }
-          display.setCursor(12, 9);
-          display.print("Tilt to turn");
-        }
-        else { //level choice
-          display.setTextSize(2);
-          display.setCursor(40, 0);
-          display.print("Level");
-          display.setTextSize(4);
-          display.setCursor(40, 20);
-          display.print(level);
-          display.setTextSize(1);
-          display.setCursor(20, 55);
-          display.print("Max Score: ");
-          display.print(12 * level + 15);
+        if (screen.screen == -2) { //app selection
+          gameChangerDisplay();
+        } else if (screen.screen == -1) { //highscores
+          asteroids.displayHighScores(display);
+        } else if (screen.screen == 0) { //settings
+          asteroids.displaySettings(display);
+        } else { //level choice
+          asteroids.displayLevel(display, screen.screen);
         }
         display.display();
       }
-      if (millis() - generalTimer >= 100) {
-        if (level != -2 and digitalRead(5)) {
-          level = max(level - 1, -2);
-          generalTimer = millis();
+      if (screen.buttons()) {
+        if (screen.screen == -2) gameChanger();
+        if (digitalRead(5) or digitalRead(4) or digitalRead(3) or digitalRead(2)) {
           disp = true;
-        } else if (digitalRead(4)) {
-          level = min(level + 1, 20);
-          generalTimer = millis();
-          disp = true;
-        } else if (level == 0 and (digitalRead(2) or digitalRead(3))) {
-          tiltToTurn = !tiltToTurn;
-          generalTimer = millis();
-          disp = true;
-        } else if (level == -2) gameChanger();
+        }
+        if (screen.screen == 0 and (digitalRead(2) or digitalRead(3))) {
+          asteroids.tiltToTurn = !asteroids.tiltToTurn;
+        }
       }
       delay(50);
     }
     waitAllUnclick();
-    display.setTextSize(2);
-    uint8_t score = 0;
-    Ship ship = Ship(64, 32, M_PI, 0);
-    Asteroid* asteroids = new Asteroid[2 * (level + 1)];
-    Laser* lasers = new Laser[2];
-    for (uint8_t i = 0; i < 2; i++) asteroids[i] = Asteroid(8, 0, 0);
-    for (uint8_t i = 2; i < level + 2; i++) asteroids[i] = Asteroid(16, 0, 0);
-    for (uint8_t i = level + 2; i < 2 * (level + 1); i++) asteroids[i] = Asteroid(0, 0, 0);
-    uint64_t laserButtonTiming = millis(), shipTurnTiming = millis(), scoreTime = millis(); //timer for button presses and score
-    Level _level;
-    if (tiltToTurn) {
-      _level = Level();
-      _level.correctPitch();
-    }
+    asteroids.setup(screen.screen);
 
-    /*App*/
-    while (true) {
-      display.clearDisplay();
-      if (millis() - shipTurnTiming >= 50) {
-        if (tiltToTurn) { //turning
-          int8_t angle = atan(_level.getPitch()) * 180 / M_PI; //degrees
-          if (angle > 2 or angle < -2) {
-            ship.turn((M_PI * min(angle, 20)) / (8 * 20));
-          }
-          shipTurnTiming = millis();
-        } else {
-          if (digitalRead(5)) {
-            ship.turn(M_PI / 8);
-            shipTurnTiming = millis();
-          } else if (digitalRead(4)) {
-            ship.turn(M_PI / -8);
-            shipTurnTiming = millis();
-          }
-        }
-      }
-      ship.moveAndDisplay(digitalRead(2), new bool[2] {lasers[0].readyToShoot(), lasers[1].readyToShoot()}, display); //only move if button pressed
-      for (uint8_t i = 0; i < 2 * (level + 1); i++) {
-        asteroids[i].moveAndDisplay(display);
-      }
-      for (uint8_t i = 0; i < 2; i++) { //shoot laser on button press
-        if (digitalRead(tiltToTurn ? 5 : 3) and lasers[i].readyToShoot() and millis() - laserButtonTiming > 100) {
-          lasers[i].setUp(ship.dir, ship.X + sin(ship.dir) * 3, ship.Y + cos(ship.dir) * 3, ship.XVelocity, ship.YVelocity); //from tip of ship with additionall ship velocity added
-          laserButtonTiming = millis();
-        }
-        if (lasers[i].readyToMove()) {
-          lasers[i].moveAndDisplay(display);
-        }
-      }
-      for (uint8_t i = 0; i < 2 * (level + 1); i++) { //asteroid laser collision
-        if (asteroids[i].Size != 0) {
-          for (uint8_t m = 0; m < 2; m++) { //every laser
-            if (lasers[m].readyToMove()) {
-              for (uint8_t n = 0; n < 2; n++) { //every point on every laser
-                for (uint8_t o = 0; o < 2; o++) {
-                  if (asteroids[i].pointInAsteroid(lasers[m].X + n, lasers[m].Y + o)) {
-                    lasers[m].hit = true;
-                    asteroids[i].hit(lasers[m].dir);
-                    if (asteroids[i].Size == 8) { //spilts and a new asteroid needs to be created
-                      score += 1;
-                      uint8_t l;
-                      for (l = 0; asteroids[l].Size != 0; l++) {}
-                      asteroids[l].Size = 8;
-                      asteroids[l].X = asteroids[i].X + 8;
-                      asteroids[l].Y = asteroids[i].Y + 8;
-                      asteroids[l].dir = asteroids[i].dir - M_PI;
-                    } else score += 3;
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      uint8_t i; //win check: all asteroids have size 0
-      for (i = 0; i < 2 * (level + 1) and asteroids[i].Size == 0; i++) {}
-      if (i >= 2 * (level + 1)) { //uesd to be > 21
-        display.clearDisplay();
-        display.setCursor(45, 0);
-        display.print("You");
-        display.setCursor(45, 21);
-        display.print("Win");
-        display.setCursor(45, 42);
-        score += max(map(millis() - scoreTime, 0, 60000, level * 5 + 9, 0), 0);
-        display.print(score);
-        display.display();
-        delay(500);
-        waitAnyClick();
-        delay(500);
-        if (score > readEEPROM(24) or (score == readEEPROM(24) and level > readEEPROM(23))) newhigh(level, score);
-        digitalWrite(6, LOW);
-      }
-      for (uint8_t i = 0; i < 2 * (level + 1); i++) { //game over check
-        bool over = false;
-        for (uint8_t m = 0; m < 3; m++) if (asteroids[i].pointInAsteroid(ship.XPoints[m][m], ship.YPoints[m][m])) over = true; //if any ship corners
-        if (over or asteroids[i].pointInAsteroid(ship.X, ship.Y)) { //or the ship center are in an asteroid
-          display.display();
-          display.setCursor(40, 0);
-          display.print("Game");
-          display.setCursor(40, 21);
-          display.print("Over");
-          display.setCursor(45, 42);
-          display.print(score);
-          display.display();
-          delay(500);
-          waitAnyClick();
-          delay(500);
-          if (score > readEEPROM(24)) newhigh(level, score);
-          digitalWrite(6, LOW);
-        }
-      }
-      display.display();
-      while (millis() - generalTimer < 40) {} //regulate to 25 fps on different levels
-      generalTimer = millis();
-    }
+    /*Game*/
+    asteroids.run(display);
   }
 
 
@@ -363,34 +119,30 @@ void setup() {
   /* Astro Party */
 
   else if (app == astroParty) { //comments are more sparse as the code is largely similar to Asteroids
-    int8_t level = 1;
-    uint64_t generalTimer = millis();
+    Screen screen = Screen(1, 1);
 
     /*Setup*/
-    while ((digitalRead(2) == 0 and digitalRead(3) == 0) or level == 0) {
+    while ((digitalRead(2) == 0 and digitalRead(3) == 0) or screen.screen == 0) {
       if (disp) { //only display if something changes
         disp = false;
         display.clearDisplay();
-        if (level == 1) { //start display
+        if (screen.screen == 0) { //app selection
+          gameChangerDisplay();
+        } else if (screen.screen == 1) { //start display
           display.setTextSize(1);
           display.setCursor(30, 0);
           display.print("Astro Party");
           display.setTextSize(4);
           display.setCursor(5, 20);
           display.print("Start");
-        } else gameChangerDisplay(); //app selection
+        }
         display.display();
       }
-      if (millis() - generalTimer >= 100) {
-        if (level == 1 and digitalRead(5)) {
-          level = max(level - 1, 0);
-          generalTimer = millis();
+      if (screen.buttons()) {
+        if (screen.screen == 0) gameChanger();
+        if (digitalRead(5) or digitalRead(4)) {
           disp = true;
-        } else if (digitalRead(4)) {
-          level = min(level + 1, 1);
-          generalTimer = millis();
-          disp = true;
-        } else if (level == 0) gameChanger();
+        }
       }
       delay(50);
     }
@@ -409,8 +161,9 @@ void setup() {
     for (uint8_t i = 0; i < 4; i++) asteroids[i] = Asteroid(8, 0, 1);
     for (uint8_t i = 4; i < 8; i++) asteroids[i] = Asteroid(16, i == 4 or i == 5, 1);
     for (uint8_t i = 8; i < 12; i++) asteroids[i] = Asteroid(0, 0, 1);
+    uint64_t frameTimer = millis();
 
-    /*App*/
+    /*Game*/
     while (true) {
       display.clearDisplay();
       for (uint8_t i = 0; i < 12; i++) { //asteroid movement and display
@@ -546,8 +299,8 @@ void setup() {
         delay(500);
         digitalWrite(6, LOW);
       }
-      while (millis() - generalTimer < 40) {} //regulate to 25 fps
-      generalTimer = millis();
+      while (millis() - frameTimer < 40) {} //regulate to 25 fps
+      frameTimer = millis();
     }
   }
 
@@ -642,7 +395,7 @@ void setup() {
     display.display();
     waitAllUnclick();
 
-    /*App*/
+    /*Game*/
     while (true) {
       if ((level >= 5 and turn) or level == 6) { //CPU
         board.CPUMove(turn, display);
@@ -810,7 +563,7 @@ void setup() {
     waitAllUnclick();
     uint64_t flashTime = 0, scoreTime = millis(); //timers for flashing selection and score
 
-    /*App*/
+    /*Game*/
     while (true) {
       while (digitalRead(2) == 0 or (board.data[mx][my] != 9 and board.data[mx][my] != 11)) { //choose place
         if (disp) { //only display if something changes
@@ -895,7 +648,7 @@ void setup() {
   /* Random Number Generator */
 
   else if (app == randomNum) {
-    Screen screen = Screen(5, 1);
+    Screen screen = Screen(4, 1);
     RandomNum randomNum = RandomNum();
 
     while (true) {
@@ -910,8 +663,8 @@ void setup() {
         display.display();
       }
 
-      if (screen.screen == 0) gameChanger();
       if (screen.buttons()) {
+        if (screen.screen == 0) gameChanger();
         if (digitalRead(5) or digitalRead(4) or digitalRead(3) or digitalRead(2)) {
           disp = true;
         }
@@ -934,7 +687,7 @@ void setup() {
   /* Level */
 
   else if (app == level) {
-    Screen screen = Screen(2, 1);
+    Screen screen = Screen(1, 1);
     Level level = Level();
 
     while (true) {
@@ -947,8 +700,8 @@ void setup() {
         level.display(display);
       }
 
-      if (screen.screen == 0) gameChanger();
       if (screen.buttons()) {
+        if (screen.screen == 0) gameChanger();
         if (digitalRead(5)) { //app selection
           disp = true;
         } else if (digitalRead(3) or digitalRead(2)) { //calibrate
@@ -964,7 +717,7 @@ void setup() {
   /* Fireworks */
 
   else if (app == fireworks) {
-    Screen screen = Screen(2, 1);
+    Screen screen = Screen(1, 1);
     Fireworks fireworks = Fireworks();
 
     while (true) {
@@ -979,8 +732,8 @@ void setup() {
         display.display();
       }
 
-      if (screen.screen == 0) gameChanger();
       if (screen.buttons()) {
+        if (screen.screen == 0) gameChanger();
         if (digitalRead(5)) { //app selection
           disp = true;
         }
@@ -994,7 +747,7 @@ void setup() {
   /* Thermometer */
 
   else if (app == thermometer) {
-    Screen screen = Screen(4, 1);
+    Screen screen = Screen(3, 1);
     Thermometer thermometer = Thermometer();
 
     while (true) {
@@ -1024,8 +777,8 @@ void setup() {
         display.display();
       }
 
-      if (screen.screen == 0) gameChanger();
       if (screen.buttons()) {
+        if (screen.screen == 0) gameChanger();
         if (digitalRead(5)) { //app selection
           if (screen.screen == 1 and thermometer.stop) { //remeasure
             thermometer.prepDisplay();
@@ -1083,7 +836,7 @@ void setup() {
   /* Cube */
 
   else if (app == cube) {
-    Screen screen = Screen(2, 1);
+    Screen screen = Screen(1, 1);
     Cube cube = Cube();
 
     while (true) {
@@ -1098,8 +851,8 @@ void setup() {
         display.display();
       }
 
-      if (screen.screen == 0) gameChanger();
       if (screen.buttons()) {
+        if (screen.screen == 0) gameChanger();
         if (digitalRead(5)) { //app selection
           disp = true;
         }

@@ -9,8 +9,9 @@
 
 class Screen {
   public:
-    int16_t screen, maxScreen;
+    int16_t screen, minScreen, maxScreen;
     uint64_t generalTimer;
     Screen(int16_t _maxScreen, int16_t start);
+    Screen(int16_t _minScreen, int16_t _maxScreen, int16_t start);
     bool buttons();
 };
