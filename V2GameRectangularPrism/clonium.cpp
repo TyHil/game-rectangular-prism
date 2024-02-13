@@ -48,10 +48,10 @@ void displayCloniumSetup(Adafruit_SSD1306& display, int16_t screen, uint8_t XDim
 
 CloniumBoard::CloniumBoard(uint8_t setXDim, uint8_t setYDim) {
   data = new uint8_t*[setXDim];
-  loopPrevention = new boolean*[setXDim];
+  loopPrevention = new bool*[setXDim];
   for (uint8_t i = 0; i < setXDim; i++) {
     data[i] = new uint8_t[setYDim];
-    loopPrevention[i] = new boolean[setYDim];
+    loopPrevention[i] = new bool[setYDim];
   }
   XDim = setXDim;
   YDim = setYDim;
@@ -59,7 +59,7 @@ CloniumBoard::CloniumBoard(uint8_t setXDim, uint8_t setYDim) {
   sixteenOverArea = 16 / (area + 1);
   fourteenOverArea = 14 / (area + 1) - (area + 1) + 1;
   for (uint8_t x = 0; x < setXDim; x++) for (uint8_t y = 0; y < setYDim; y++) data[x][y] = 0;
-  boolean spaceFromEdges = XDim > 3 and YDim > 3 and (XDim != 4 or YDim != 4); //is the board big enough to accomidate space away from the edges for starting pieces
+  bool spaceFromEdges = XDim > 3 and YDim > 3 and (XDim != 4 or YDim != 4); //is the board big enough to accomidate space away from the edges for starting pieces
   data[min(spaceFromEdges, XDim - 1)][min(spaceFromEdges, YDim - 1)] = 3; //starting posistions
   data[max(XDim - 1 - spaceFromEdges, 0)][max(YDim - 1 - spaceFromEdges, 0)] = 10;
 }
@@ -80,7 +80,7 @@ uint8_t CloniumBoard::getDots(uint8_t x, uint8_t y) {
 }
 
 //displays a box around currently selected square
-void CloniumBoard::drawSelection(uint8_t x, uint8_t y, boolean flash, Adafruit_SSD1306& display) {
+void CloniumBoard::drawSelection(uint8_t x, uint8_t y, bool flash, Adafruit_SSD1306& display) {
   display.drawRect(x * sixteenOverArea + 1, y * sixteenOverArea + 1, fourteenOverArea + (x != 8 * (area + 1) - 1), fourteenOverArea + (y != 4 * (area + 1) - 1), flash xor getTeam(x, y) != 1); //flash selection choice like a cursor blinks
 }
 
@@ -136,7 +136,7 @@ uint8_t CloniumBoard::recursiveEval(uint8_t x, uint8_t y, uint8_t lastDir, uint8
 
 void CloniumBoard::CPUMove(uint8_t turn, Adafruit_SSD1306& display) {
   int8_t c, fc = -128; //evaluation variables
-  boolean f[XDim][YDim];
+  bool f[XDim][YDim];
   for (uint8_t i = 0; i < XDim; i++) for (uint8_t j = 0; j < YDim; j++) f[i][j] = 0;
   for (uint8_t x = 0; x < XDim; x++) { //go though each square and give it a score
     for (uint8_t y = 0; y < YDim; y++) {

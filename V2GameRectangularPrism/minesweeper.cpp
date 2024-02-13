@@ -48,10 +48,10 @@ void displayMinesweeperSetup(Adafruit_SSD1306& display, int16_t screen, uint8_t 
 
 MinesweeperBoard::MinesweeperBoard(uint8_t setXDim, uint8_t setYDim, uint8_t setMines) {
   data = new uint8_t*[setXDim];
-  loopPrevention = new boolean*[setXDim];
+  loopPrevention = new bool*[setXDim];
   for (uint8_t i = 0; i < setXDim; i++) {
     data[i] = new uint8_t[setYDim];
-    loopPrevention[i] = new boolean[setYDim];
+    loopPrevention[i] = new bool[setYDim];
   }
   XDim = setXDim;
   YDim = setYDim;
@@ -88,12 +88,12 @@ void MinesweeperBoard::drawNumber(uint8_t x, uint8_t y, Adafruit_SSD1306& displa
   }
 }
 
-void MinesweeperBoard::drawSelection(uint8_t x, uint8_t y, boolean flash, Adafruit_SSD1306& display) { //displays a box around currently selected square
+void MinesweeperBoard::drawSelection(uint8_t x, uint8_t y, bool flash, Adafruit_SSD1306& display) { //displays a box around currently selected square
   display.drawRect(x * sixteenOverArea + 1, y * sixteenOverArea + 1, fourteenOverArea + (x != 8 * (area + 1) - 1), fourteenOverArea + (y != 4 * (area + 1) - 1), flash xor data[x][y] < 9); //flash selection choice like a cursor blinks
   if (flash) drawNumber(x, y, display);
 }
 
-void MinesweeperBoard::draw(boolean drawMines, Adafruit_SSD1306& display) { //displays grid and numbers for Minesweeper
+void MinesweeperBoard::draw(bool drawMines, Adafruit_SSD1306& display) { //displays grid and numbers for Minesweeper
   display.clearDisplay();
   grid(XDim, YDim, display); //draw grid
   for (uint8_t x = 0; x < XDim; x++) { //run through grid
@@ -125,7 +125,7 @@ void MinesweeperBoard::mover(uint8_t x, uint8_t y) { //make a move for Minesweep
   recursiveMover(x, y);
 }
 
-boolean MinesweeperBoard::winCheck() {
+bool MinesweeperBoard::winCheck() {
   uint8_t discoveredSquares = 0; //found any mines that have not been flagged
   for (uint8_t x = 0; x < XDim; x++) for (uint8_t y = 0; y < YDim; y++) if (data[x][y] < 9) discoveredSquares++; //check for win
   return XDim * YDim - discoveredSquares == mines;
