@@ -41,3 +41,15 @@ void updateEEPROM(unsigned int location, uint8_t data) { //update the value of a
     delay(5);
   }
 }
+
+
+
+/* Board */
+
+void grid(uint8_t XDim, uint8_t YDim, Adafruit_SSD1306& display) { //draw grid for Clonium or Minesweeper
+  const boolean area = XDim > 8 or YDim > 4;
+  for (uint8_t i = 0; i <= XDim * (-8 * area + 16); i += 16 / (area + 1)) display.drawLine(i, 0, i, YDim * (-8 * area + 16), WHITE);
+  for (uint8_t i = 0; i <= YDim * (-8 * area + 16); i += 16 / (area + 1)) display.drawLine(0, i, XDim * (-8 * area + 16), i, WHITE);
+  if (XDim % 8 == 0) display.drawLine(127, 0, 127, YDim * (-8 * area + 16), WHITE); //rightmost line
+  if (YDim % 4 == 0) display.drawLine(0, 63, XDim * (-8 * area + 16), 63, WHITE); //bottom line
+}

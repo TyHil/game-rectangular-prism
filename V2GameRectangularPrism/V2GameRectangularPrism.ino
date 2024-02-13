@@ -11,6 +11,7 @@
 #include "screen.h"
 #include "asteroids.h"
 #include "astroParty.h"
+#include "clonium.h"
 #include "boards.h"
 #include "randomNum.h"
 #include "level.h"
@@ -162,166 +163,47 @@ void setup() {
   /* Clonium */
 
   else if (app == clonium) {
-    const String names[7] = {"X", "Y", "Small", "Large", "2P", "1P", "0P"}; //gamemodes
-    uint8_t nums[2] = {8, 4};
-    int8_t level = 4;
-    uint64_t generalTimer = millis();
+    Screen screen = Screen(-1, 6, 4);
+    uint8_t nums[2] = {8, 4}; //XDim, YDim
 
     /*Setup*/
-    while ((digitalRead(2) == 0 and digitalRead(3) == 0) or (level != 4 and level != 5 and level != 6)) { //choose gamemode
+    while ((digitalRead(2) == 0 and digitalRead(3) == 0) or (screen.screen != 4 and screen.screen != 5 and screen.screen != 6)) {
       if (disp) { //only display if something changes
         disp = false;
         display.clearDisplay();
-        if (level >= 0) { //start screen
-          display.setTextSize(1);
-          display.setCursor(40, 0);
-          display.print("Clonium");
-          for (uint8_t i = 0; i < 4; i++) {
-            uint8_t y = 16;
-            for (uint8_t j = 0; j < min(i, 3); j++) y += (names[j].length() + 1) * 6 + (j == 0) * 18 + (j == 1) * 6;
-            display.setCursor(y, 15);
-            display.setTextSize(1);
-            display.print(names[i + (i == 3)]);
-            display.setCursor(y, 30);
-            if (i < 2) {
-              display.setTextSize(2);
-              display.print(nums[i]);
-            } else {
-              display.print(names[i + 1 + (i == 3)]);
-            } if (i == 3) {
-              display.setCursor(y, 45);
-              display.print(names[6]);
-            }
-          }
-          display.setTextColor(BLACK);
-          uint8_t y = 16;
-          for (uint8_t j = 0; j < min(level - (level == 3), 3); j++) y += (names[j].length() + 1) * 6 + (j == 0) * 18 + (j == 1) * 6;
-          display.fillRect(y - 1, 15 * max(level + 2 * (level == 3), 4) - 46, names[level].length() * 6 + 1, 9, WHITE);
-          display.setCursor(y, 15 * max(level + 2 * (level == 3), 4) - 45);
-          display.setTextSize(1);
-          display.print(names[level]);
-          display.setTextColor(WHITE);
-        } else gameChangerDisplay(); //app selection
+        if (screen.screen == -1) { //app selection
+          gameChangerDisplay();
+        } else { //start display
+          displayCloniumSetup(display, screen.screen, nums[0], nums[1]);
+        }
         display.display();
       }
-      if (millis() - generalTimer >= 100) {
-        if (digitalRead(4)) {
-          level = min(level + 1, 6);
-          generalTimer = millis();
+      if (screen.buttons()) {
+        if (screen.screen == 0) gameChanger();
+        if (digitalRead(5) or digitalRead(4) or digitalRead(3) or digitalRead(2)) {
           disp = true;
         }
-        if (level >= 0) {
-          if (digitalRead(5)) {
-            level = max(level - 1, -1);
-            generalTimer = millis();
-            disp = true;
-          } else if (digitalRead(3) and level < 2) {
-            nums[level] = max(nums[level] - 1, 1 + 1 * (nums[0] * nums[1] == 2));
-            generalTimer = millis();
-            disp = true;
-          } else if (digitalRead(2) and level < 2) {
-            nums[level] = min(nums[level] + 1, !level * 16 + level * 8);
-            generalTimer = millis();
-            disp = true;
-          } else if (level == 2 and (digitalRead(3) or digitalRead(2))) { //small board
+        if (screen.screen >= 0) {
+          if (digitalRead(3) and screen.screen < 2) {
+            nums[screen.screen] = max(nums[level] - 1, 1 + 1 * (nums[0] * nums[1] == 2));
+          } else if (digitalRead(2) and screen.screen < 2) {
+            nums[screen.screen] = min(nums[screen.screen] + 1, !screen.screen * 16 + screen.screen * 8);
+          } else if (screen.screen == 2 and (digitalRead(3) or digitalRead(2))) { //small board
             nums[0] = 8;
             nums[1] = 4;
-            generalTimer = millis();
-            disp = true;
-          } else if (level == 3 and (digitalRead(3) or digitalRead(2))) { //large board
+          } else if (screen.screen == 3 and (digitalRead(3) or digitalRead(2))) { //large board
             nums[0] = 16;
             nums[1] = 8;
-            generalTimer = millis();
-            disp = true;
           }
-        } else if (level == -1) gameChanger();
-        delay(50);
+        }
       }
       delay(50);
     }
-    boolean spaceFromEdges = nums[0] > 3 and nums[1] > 3 and (nums[0] != 4 or nums[1] != 4); //is the board big enough to accomidate space away from the edges for starting pieces
-    uint8_t mx = min(spaceFromEdges, nums[0] - 1), my = min(spaceFromEdges, nums[1] - 1), mxLast[2] = {mx, (uint8_t)max(nums[0] - 1 - spaceFromEdges, 0)}, myLast[2] = {my, (uint8_t)max(nums[1] - 1  - spaceFromEdges, 0)}; //play choice, last choice
-    boolean turn = 0, flash = 0; //turn, flashing selection
-    uint64_t flashTime = 0;
-    CloniumBoard board = CloniumBoard(nums[0], nums[1]);
-    board.draw(display);
-    display.display();
     waitAllUnclick();
+    Clonium clonium = Clonium(nums[0], nums[1], screen.screen == 6 ? 0 : (screen.screen == 5 ? 1 : 2));
 
     /*Game*/
-    while (true) {
-      if ((level >= 5 and turn) or level == 6) { //CPU
-        board.CPUMove(turn, display);
-      } else { //player
-        disp = true;
-        if (level == 4) { //move selection back to old choice in 2 player for ease of use
-          mx = mxLast[turn];
-          my = myLast[turn];
-        }
-        while (digitalRead(2) == 0 or board.getTeam(mx, my) - 1 != turn) {
-          if (disp) { //only display if something changes
-            board.draw(display);
-            flash = 0;
-          }
-          if (disp or millis() - flashTime >= 500) {
-            disp = false;
-            board.drawSelection(mx, my, flash, display);
-            flash = !flash;
-            flashTime = millis();
-            display.display();
-          }
-          if (millis() - generalTimer >= 100) { //buttons
-            if (digitalRead(5)) {
-              mx = (mx + board.XDim - 1) % board.XDim; //+ 7 because mod can output negative numbers
-              generalTimer = millis();
-              disp = true;
-            } else if (digitalRead(4)) {
-              mx = (mx + 1) % board.XDim;
-              generalTimer = millis();
-              disp = true;
-            } else if (digitalRead(3)) {
-              my = (my + 1) % board.YDim;
-              generalTimer = millis();
-              disp = true;
-            }
-          }
-          delay(50);
-        }
-        if (level == 4) {
-          mxLast[turn] = mx;
-          myLast[turn] = my;
-        }
-        board.mover(mx, my, turn);
-      }
-      board.draw(display);
-      display.display();
-      if (level == 4 or (level == 5 and !turn)) delay(200);
-      boolean count = 1;
-      for (uint8_t x = 0; x < board.XDim; x++) { //check for win by counting all of the enemies pieces
-        for (uint8_t y = 0; y < board.YDim; y++) {
-          if (board.getTeam(x, y) - 1 == !turn) {
-            count = 0;
-          }
-        }
-      }
-      if (count) { //win display
-        delay(1000);
-        display.clearDisplay();
-        display.fillRect(24, 24, 15, 15, !turn); //dots
-        display.fillRect(29, 26, 4, 4, turn);
-        display.fillRect(32, 32, 4, 4, turn);
-        display.fillRect(26, 32, 4, 4, turn);
-        display.setTextSize(2);
-        display.setCursor(50, 24);
-        display.print("Wins");
-        display.display();
-        delay(500);
-        waitAnyClick();
-        delay(500);
-        digitalWrite(6, LOW);
-      }
-      turn = !turn; //change turn
-    }
+    clonium.run(display);
   }
 
 

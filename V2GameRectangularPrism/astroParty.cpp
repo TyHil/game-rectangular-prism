@@ -1,5 +1,5 @@
 /*
-  AstroParty app implementation
+  Astro Party app implementation
   Written by Tyler Gordon Hill
 */
 #include "astroParty.h"

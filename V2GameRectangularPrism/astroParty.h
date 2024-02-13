@@ -1,5 +1,5 @@
 /*
-  AstroParty app header
+  Astro Party app header
   Written by Tyler Gordon Hill
 */
 #include "shipAsteroidLaser.h"
