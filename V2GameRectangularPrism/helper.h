@@ -3,10 +3,10 @@
   Written by Tyler Gordon Hill
 */
 #pragma once
-#include <Arduino.h>
-#include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Arduino.h>
+#include <Wire.h>
 
 
 
@@ -32,4 +32,4 @@ void updateEEPROM(unsigned int location, uint8_t data);
 
 /* Board */
 
-void grid(uint8_t XDim, uint8_t YDim, Adafruit_SSD1306& display);
+void grid(uint8_t XDim, uint8_t YDim, Adafruit_SSD1306 & display);

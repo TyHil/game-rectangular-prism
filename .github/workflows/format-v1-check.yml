@@ -1,0 +1,22 @@
+name: Format V1 Check
+
+on: 
+  push:
+    paths:
+      - V1GameRectangularPrism/**
+
+jobs:
+  main:
+    name: Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v3
+
+      - name: Format
+        uses: DoozyX/clang-format-lint-action@v0.17
+        with:
+          source: "V1GameRectangularPrism"
+          extensions: "cpp,h,ino"
+          clangFormatVersion: 14

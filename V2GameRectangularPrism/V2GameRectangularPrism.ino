@@ -7,18 +7,29 @@
   Written by Tyler Gordon Hill
   Version 9.0
 */
-#include "helper.h"
-#include "screen.h"
 #include "asteroids.h"
 #include "astroParty.h"
 #include "clonium.h"
+#include "cube.h"
+#include "fireworks.h"
+#include "helper.h"
+#include "level.h"
 #include "minesweeper.h"
 #include "randomNum.h"
-#include "level.h"
-#include "fireworks.h"
+#include "screen.h"
 #include "thermometer.h"
-#include "cube.h"
-enum App { asteroids, astroParty, clonium, minesweeper, randomNum, level, fireworks, thermometer, cube, NUM_APPS };
+enum App {
+  asteroids,
+  astroParty,
+  clonium,
+  minesweeper,
+  randomNum,
+  level,
+  fireworks,
+  thermometer,
+  cube,
+  NUM_APPS
+};
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 App app; //which app is being used
 bool disp = true; //limits display refreshes when nothing has changed
@@ -28,7 +39,8 @@ bool disp = true; //limits display refreshes when nothing has changed
 /* App Selection Functions */
 
 void gameChangerDisplay() { //displays menu to change between different games
-  const String names[NUM_APPS + 1] = {"Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Num", "Level", "Fireworks", "Temp", "Cube"}; //app names
+  const String names[NUM_APPS + 1]
+    = {"Asteroids", "Astro Party", "Clonium", "Minesweeper", "Random Num", "Level", "Fireworks", "Temp", "Cube"}; //app names
   display.setTextSize(1);
   display.setCursor(30, 0);
   display.print("Switch App");
@@ -81,7 +93,8 @@ void setup() {
     bool tiltToTurn = false;
 
     /*Setup*/
-    while ((digitalRead(2) == 0 and digitalRead(3) == 0) or screen.screen == 0 or screen.screen == -1 or screen.screen == -2) { //menu and level choice
+    while ((digitalRead(2) == 0 and digitalRead(3) == 0) or screen.screen == 0
+           or screen.screen == -1 or screen.screen == -2) { //menu and level choice
       if (disp) { //only display if something changes
         disp = false;
         display.clearDisplay();
@@ -93,11 +106,8 @@ void setup() {
           display.setTextSize(1); //top row text
           display.setCursor(40, 0);
           display.print("Settings");
-          if (tiltToTurn) {
-            display.fillRect(0, 8, 9, 9, WHITE);
-          } else {
-            display.drawRect(0, 8, 9, 9, WHITE);
-          }
+          if (tiltToTurn) display.fillRect(0, 8, 9, 9, WHITE);
+          else display.drawRect(0, 8, 9, 9, WHITE);
           display.setCursor(12, 9);
           display.print("Tilt to turn");
         } else { //level choice
@@ -107,12 +117,8 @@ void setup() {
       }
       if (screen.buttons()) {
         if (screen.screen == -2) gameChanger();
-        if (digitalRead(5) or digitalRead(4) or digitalRead(3) or digitalRead(2)) {
-          disp = true;
-        }
-        if (screen.screen == 0 and (digitalRead(2) or digitalRead(3))) {
-          tiltToTurn = !tiltToTurn;
-        }
+        if (digitalRead(5) or digitalRead(4) or digitalRead(3) or digitalRead(2)) disp = true;
+        if (screen.screen == 0 and (digitalRead(2) or digitalRead(3))) tiltToTurn = !tiltToTurn;
       }
       delay(50);
     }
@@ -135,18 +141,15 @@ void setup() {
       if (disp) { //only display if something changes
         disp = false;
         display.clearDisplay();
-        if (screen.screen == 0) { //app selection
+        if (screen.screen == 0) //app selection
           gameChangerDisplay();
-        } else if (screen.screen == 1) { //start display
+        else if (screen.screen == 1) //start display
           displayAstroPartyStart(display);
-        }
         display.display();
       }
       if (screen.buttons()) {
         if (screen.screen == 0) gameChanger();
-        if (digitalRead(5) or digitalRead(4)) {
-          disp = true;
-        }
+        if (digitalRead(5) or digitalRead(4)) disp = true;
       }
       delay(50);
     }
@@ -166,22 +169,20 @@ void setup() {
     uint8_t nums[2] = {8, 4}; //XDim, YDim
 
     /*Setup*/
-    while ((digitalRead(2) == 0 and digitalRead(3) == 0) or (screen.screen != 4 and screen.screen != 5 and screen.screen != 6)) {
+    while ((digitalRead(2) == 0 and digitalRead(3) == 0)
+           or (screen.screen != 4 and screen.screen != 5 and screen.screen != 6)) {
       if (disp) { //only display if something changes
         disp = false;
         display.clearDisplay();
-        if (screen.screen == -1) { //app selection
+        if (screen.screen == -1) //app selection
           gameChangerDisplay();
-        } else { //start display
+        else //start display
           displayCloniumSetup(display, screen.screen, nums[0], nums[1]);
-        }
         display.display();
       }
       if (screen.buttons()) {
         if (screen.screen == -1) gameChanger();
-        if (digitalRead(5) or digitalRead(4) or digitalRead(3) or digitalRead(2)) {
-          disp = true;
-        }
+        if (digitalRead(5) or digitalRead(4) or digitalRead(3) or digitalRead(2)) disp = true;
         if (screen.screen >= 0) {
           if (digitalRead(3) and screen.screen < 2) {
             nums[screen.screen] = max(nums[screen.screen] - 1, 1 + 1 * (nums[0] * nums[1] == 2));
@@ -218,24 +219,26 @@ void setup() {
       if (disp) { //only display if something changes
         disp = false;
         display.clearDisplay();
-        if (screen.screen == -1) { //app selection
+        if (screen.screen == -1) //app selection
           gameChangerDisplay();
-        } else { //start display
+        else //start display
           displayMinesweeperSetup(display, screen.screen, nums[0], nums[1], nums[2]);
-        }
         display.display();
       }
       if (screen.buttons()) {
         if (screen.screen == -1) gameChanger();
-        if (digitalRead(5) or digitalRead(4) or digitalRead(3) or digitalRead(2)) {
-          disp = true;
-        }
+        if (digitalRead(5) or digitalRead(4) or digitalRead(3) or digitalRead(2)) disp = true;
         if (screen.screen >= 0) {
           if (digitalRead(3) and screen.screen < 3) {
-            nums[screen.screen] = max(nums[screen.screen] - 1, 1 + 1 * (screen.screen != 2 and nums[0] * nums[1] == 2));
+            nums[screen.screen]
+              = max(nums[screen.screen] - 1, 1 + 1 * (screen.screen != 2 and nums[0] * nums[1] == 2));
             nums[2] = min(nums[0] * nums[1] - 1, nums[2]);
           } else if (digitalRead(2) and screen.screen < 4) {
-            nums[screen.screen] = min(nums[screen.screen] + 1, (screen.screen == 0) * 16 + (screen.screen == 1) * 8 + (screen.screen == 2) * (nums[0] * nums[1] - 1));
+            nums[screen.screen] = min(
+              nums[screen.screen] + 1,
+              (screen.screen == 0) * 16 + (screen.screen == 1) * 8
+                + (screen.screen == 2) * (nums[0] * nums[1] - 1)
+            );
           } else if (screen.screen == 4 and (digitalRead(3) or digitalRead(2))) { //small board
             nums[0] = 8;
             nums[1] = 4;
@@ -268,27 +271,19 @@ void setup() {
       if (disp) {
         disp = false;
         display.clearDisplay();
-        if (screen.screen == 0) {
-          gameChangerDisplay();
-        } else if (screen.screen > 0) {
-          randomNum.display(display, screen.screen);
-        }
+        if (screen.screen == 0) gameChangerDisplay();
+        else if (screen.screen > 0) randomNum.display(display, screen.screen);
         display.display();
       }
 
       if (screen.buttons()) {
         if (screen.screen == 0) gameChanger();
-        if (digitalRead(5) or digitalRead(4) or digitalRead(3) or digitalRead(2)) {
-          disp = true;
-        }
+        if (digitalRead(5) or digitalRead(4) or digitalRead(3) or digitalRead(2)) disp = true;
         if (screen.screen > 0) {
-          if ((digitalRead(3) or digitalRead(2)) and screen.screen == 4) { //new result
+          if ((digitalRead(3) or digitalRead(2)) and screen.screen == 4) //new result
             randomNum.generate();
-          } else if (digitalRead(3)) {
-            randomNum.decNums(screen.screen);
-          } else if (digitalRead(2)) {
-            randomNum.incNums(screen.screen);
-          }
+          else if (digitalRead(3)) randomNum.decNums(screen.screen);
+          else if (digitalRead(2)) randomNum.incNums(screen.screen);
         }
       }
       delay(50);
@@ -315,11 +310,10 @@ void setup() {
 
       if (screen.buttons()) {
         if (screen.screen == 0) gameChanger();
-        if (digitalRead(5)) { //app selection
+        if (digitalRead(5)) //app selection
           disp = true;
-        } else if (digitalRead(3) or digitalRead(2)) { //calibrate
+        else if (digitalRead(3) or digitalRead(2)) //calibrate
           level.correctPitch();
-        }
       }
       delay(50);
     }
@@ -347,14 +341,13 @@ void setup() {
 
       if (screen.buttons()) {
         if (screen.screen == 0) gameChanger();
-        if (digitalRead(5)) { //app selection
+        if (digitalRead(5)) //app selection
           disp = true;
-        }
       }
       delay(50);
     }
   }
-  
+
 
 
   /* Thermometer */
@@ -364,9 +357,7 @@ void setup() {
     Thermometer thermometer = Thermometer();
 
     while (true) {
-      if (thermometer.measure(screen.screen)) {
-        disp = true;
-      }
+      if (thermometer.measure(screen.screen)) disp = true;
 
       if (screen.screen == 0 and disp) {
         disp = false;
@@ -393,9 +384,8 @@ void setup() {
       if (screen.buttons()) {
         if (screen.screen == 0) gameChanger();
         if (digitalRead(5)) { //app selection
-          if (screen.screen == 1 and thermometer.stop) { //remeasure
+          if (screen.screen == 1 and thermometer.stop) //remeasure
             thermometer.prepDisplay();
-          }
           if (screen.screen == 2 and thermometer.historyScreenPlace != 0) {
             screen.screen = 3;
             thermometer.prepHistory(false);
@@ -406,38 +396,27 @@ void setup() {
           }
           disp = true;
         } else if (digitalRead(4)) {
-          if (screen.screen == 1 and thermometer.stop) { //remeasure
+          if (screen.screen == 1 and thermometer.stop) //remeasure
             thermometer.prepDisplay();
-          }
-          if (screen.screen == 2) { //settings prep
+          if (screen.screen == 2) //settings prep
             thermometer.prepSettings();
-          }
           if (screen.screen == 3) {
-            if (thermometer.historyRecordPlace == 0) {
-              screen.screen = 2;
-            } else {
-              thermometer.prepHistory(true);
-            }
+            if (thermometer.historyRecordPlace == 0) screen.screen = 2;
+            else thermometer.prepHistory(true);
           }
           disp = true;
         } else if (digitalRead(3)) {
-          if (screen.screen == 2) { //settings
+          if (screen.screen == 2) //settings
             thermometer.settingsChoice3();
-          } else if (screen.screen == 3) { //jump to start
+          else if (screen.screen == 3) //jump to start
             thermometer.historyScreenMin();
-          }
-          if (screen.screen > 1) {
-            disp = true;
-          }
+          if (screen.screen > 1) disp = true;
         } else if (digitalRead(2)) {
-          if (screen.screen == 2) { //settings
+          if (screen.screen == 2) //settings
             thermometer.settingsChoice2();
-          } else if (screen.screen == 3) { //jump to end
+          else if (screen.screen == 3) //jump to end
             thermometer.historyScreenMax();
-          }
-          if (screen.screen > 1) {
-            disp = true;
-          }
+          if (screen.screen > 1) disp = true;
         }
       }
       delay(50);
@@ -466,9 +445,8 @@ void setup() {
 
       if (screen.buttons()) {
         if (screen.screen == 0) gameChanger();
-        if (digitalRead(5)) { //app selection
+        if (digitalRead(5)) //app selection
           disp = true;
-        }
       }
       delay(50);
     }

@@ -8,7 +8,7 @@
 
 /* Reset Function */
 
-extern void (*resetFunc) (void);
+extern void (*resetFunc)(void);
 
 
 

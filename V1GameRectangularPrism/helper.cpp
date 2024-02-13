@@ -9,7 +9,7 @@
 
 /* Reset Function */
 
-void (*resetFunc) (void) = nullptr;
+void (*resetFunc)(void) = nullptr;
 
 
 
