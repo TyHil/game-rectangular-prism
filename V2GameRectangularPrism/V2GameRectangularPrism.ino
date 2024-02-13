@@ -78,7 +78,7 @@ void setup() {
 
   if (app == asteroids) {
     Screen screen = Screen(-2, MAX_LEVEL, 1);
-    Asteroids asteroids = Asteroids();
+    bool tiltToTurn = false;
 
     /*Setup*/
     while ((digitalRead(2) == 0 and digitalRead(3) == 0) or screen.screen == 0 or screen.screen == -1 or screen.screen == -2) { //menu and level choice
@@ -88,11 +88,20 @@ void setup() {
         if (screen.screen == -2) { //app selection
           gameChangerDisplay();
         } else if (screen.screen == -1) { //highscores
-          asteroids.displayHighScores(display);
+          displayAsteroidsHighScores(display);
         } else if (screen.screen == 0) { //settings
-          asteroids.displaySettings(display);
+          display.setTextSize(1); //top row text
+          display.setCursor(40, 0);
+          display.print("Settings");
+          if (tiltToTurn) {
+            display.fillRect(0, 8, 9, 9, WHITE);
+          } else {
+            display.drawRect(0, 8, 9, 9, WHITE);
+          }
+          display.setCursor(12, 9);
+          display.print("Tilt to turn");
         } else { //level choice
-          asteroids.displayLevel(display, screen.screen);
+          displayAsteroidsLevel(display, screen.screen);
         }
         display.display();
       }
@@ -102,13 +111,13 @@ void setup() {
           disp = true;
         }
         if (screen.screen == 0 and (digitalRead(2) or digitalRead(3))) {
-          asteroids.tiltToTurn = !asteroids.tiltToTurn;
+          tiltToTurn = !tiltToTurn;
         }
       }
       delay(50);
     }
     waitAllUnclick();
-    asteroids.setup(screen.screen);
+    Asteroids asteroids = Asteroids(tiltToTurn, screen.screen);
 
     /*Game*/
     asteroids.run(display);
@@ -120,7 +129,6 @@ void setup() {
 
   else if (app == astroParty) {
     Screen screen = Screen(1, 1);
-    AstroParty astroParty = AstroParty();
 
     /*Setup*/
     while ((digitalRead(2) == 0 and digitalRead(3) == 0) or screen.screen == 0) {
@@ -130,7 +138,7 @@ void setup() {
         if (screen.screen == 0) { //app selection
           gameChangerDisplay();
         } else if (screen.screen == 1) { //start display
-          astroParty.displayStart(display);
+          displayAstroPartyStart(display);
         }
         display.display();
       }
@@ -143,7 +151,7 @@ void setup() {
       delay(50);
     }
     waitAllUnclick();
-    astroParty.setup();
+    AstroParty astroParty = AstroParty();
 
     /*Game*/
     astroParty.run(display);

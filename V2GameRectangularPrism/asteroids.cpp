@@ -5,33 +5,7 @@
 #include "asteroids.h"
 #include "helper.h"
 
-
-
-/* Asteroids */
-
-Asteroids::Asteroids() {
-  tiltToTurn = false;
-}
-
-void Asteroids::setup(uint8_t setLevel) {
-  level = setLevel;
-  score = 0;
-  ship = Ship(64, 32, M_PI, 0);
-  for (uint8_t i = 0; i < 2; i++) asteroids[i] = Asteroid(8, 0, 0);
-  for (uint8_t i = 2; i < level + 2; i++) asteroids[i] = Asteroid(16, 0, 0);
-  for (uint8_t i = level + 2; i < 2 * (level + 1); i++) asteroids[i] = Asteroid(0, 0, 0);
-  laserButtonTiming = millis();
-  shipTurnTiming = millis();
-  scoreTime = millis();
-  frameTimer = millis();
-  Level tilt;
-  if (tiltToTurn) {
-    tilt = Level();
-    tilt.correctPitch();
-  }
-}
-
-void Asteroids::displayHighScores(Adafruit_SSD1306& display) { //displays list of high scores for Asteroids
+void displayAsteroidsHighScores(Adafruit_SSD1306& display) { //displays list of high scores for Asteroids
   display.setTextSize(1); //top row text
   display.setCursor(30, 0);
   display.print(" High Scores");
@@ -59,20 +33,7 @@ void Asteroids::displayHighScores(Adafruit_SSD1306& display) { //displays list o
   }
 }
 
-void Asteroids::displaySettings(Adafruit_SSD1306& display) {
-  display.setTextSize(1); //top row text
-  display.setCursor(40, 0);
-  display.print("Settings");
-  if (tiltToTurn) {
-    display.fillRect(0, 8, 9, 9, WHITE);
-  } else {
-    display.drawRect(0, 8, 9, 9, WHITE);
-  }
-  display.setCursor(12, 9);
-  display.print("Tilt to turn");
-}
-
-void Asteroids::displayLevel(Adafruit_SSD1306& display, uint8_t _level) {
+void displayAsteroidsLevel(Adafruit_SSD1306& display, uint8_t _level) {
   display.setTextSize(2);
   display.setCursor(40, 0);
   display.print("Level");
@@ -85,7 +46,7 @@ void Asteroids::displayLevel(Adafruit_SSD1306& display, uint8_t _level) {
   display.print(12 * _level + 15);
 }
 
-void Asteroids::newHighScore(Adafruit_SSD1306& display, int8_t level, uint8_t score) { //sets a new high score for Asteroids
+void newHighScore(Adafruit_SSD1306& display, int8_t level, uint8_t score) { //sets a new high score for Asteroids
   int8_t i; //move lesser high scores down
   for (i = 3; i >= 0; i--) if (score > readEEPROM(5 * i + 4) or (score == readEEPROM(5 * i + 4) and level > readEEPROM(5 * i + 3))) for (uint8_t j = 0; j < 5; j++) updateEEPROM(5 * (i + 1) + j, readEEPROM(5 * i + j));
     else break;
@@ -126,11 +87,34 @@ void Asteroids::newHighScore(Adafruit_SSD1306& display, int8_t level, uint8_t sc
   updateEEPROM(5 * i + 3, level);
   updateEEPROM(5 * i + 4, score);
   display.clearDisplay();
-  displayHighScores(display); //display high scores
+  displayAsteroidsHighScores(display); //display high scores
   display.display();
   delay(100);
   waitAnyClick();
   delay(100);
+}
+
+
+
+/* Asteroids */
+
+Asteroids::Asteroids(bool setTiltToTurn, uint8_t setLevel) {
+  tiltToTurn = setTiltToTurn;
+  level = setLevel;
+  score = 0;
+  ship = Ship(64, 32, M_PI, 0);
+  for (uint8_t i = 0; i < 2; i++) asteroids[i] = Asteroid(8, 0, 0);
+  for (uint8_t i = 2; i < level + 2; i++) asteroids[i] = Asteroid(16, 0, 0);
+  for (uint8_t i = level + 2; i < 2 * (level + 1); i++) asteroids[i] = Asteroid(0, 0, 0);
+  laserButtonTiming = millis();
+  shipTurnTiming = millis();
+  scoreTime = millis();
+  frameTimer = millis();
+  Level tilt;
+  if (tiltToTurn) {
+    tilt = Level();
+    tilt.correctPitch();
+  }
 }
 
 void Asteroids::turning() {

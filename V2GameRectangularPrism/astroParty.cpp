@@ -6,13 +6,20 @@
 #include "helper.h"
 const String powers[] = {"Reverse", "Laser"};
 
+void displayAstroPartyStart(Adafruit_SSD1306& display) {
+  display.setTextSize(1);
+  display.setCursor(30, 0);
+  display.print("Astro Party");
+  display.setTextSize(4);
+  display.setCursor(5, 20);
+  display.print("Start");
+}
 
 
-/* Asteroids */
 
-AstroParty::AstroParty() {}
+/* Astro Party */
 
-void AstroParty::setup() {
+AstroParty::AstroParty() {
   ships[0] = Ship(32, 32, 0, 0);
   ships[1] = Ship(96, 32, (3 / 2) * M_PI, 1);
   for (uint8_t i = 0; i < 4; i++) {
@@ -37,15 +44,6 @@ void AstroParty::setup() {
   winner = 0;
   textDisplayNum = 0;
   frameTimer = millis();
-}
-
-void AstroParty::displayStart(Adafruit_SSD1306& display) {
-  display.setTextSize(1);
-  display.setCursor(30, 0);
-  display.print("Astro Party");
-  display.setTextSize(4);
-  display.setCursor(5, 20);
-  display.print("Start");
 }
 
 void AstroParty::turning() {

@@ -4,6 +4,8 @@
 */
 #include "shipAsteroidLaser.h"
 
+void displayAstroPartyStart(Adafruit_SSD1306& display);
+
 class AstroParty {
   public:
     Ship ships[2];
@@ -14,8 +16,6 @@ class AstroParty {
     uint8_t textDisplayNum;
     uint64_t frameTimer;
     AstroParty();
-    void setup();
-    void displayStart(Adafruit_SSD1306& display);
     void turning();
     void move(Adafruit_SSD1306& display);
     void asteroidLaserCollision();
