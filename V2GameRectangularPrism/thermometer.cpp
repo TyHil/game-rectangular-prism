@@ -2,8 +2,9 @@
   Thermometer app implementation
   Written by Tyler Gordon Hill
 */
-#include "thermometer.h"
 #include <Arduino_LSM6DS3.h>
+
+#include "thermometer.h"
 
 
 
