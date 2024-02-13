@@ -2,8 +2,8 @@ name: Format V2 Check
 
 on: 
   push:
-#    paths:
-#      - V2GameRectangularPrism/**
+    paths:
+      - V2GameRectangularPrism/**
 
 jobs:
   main:

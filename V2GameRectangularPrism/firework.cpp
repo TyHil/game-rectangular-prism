@@ -22,14 +22,10 @@ void Spark::reset() {
   offScreen = 0;
 }
 
-bool Spark::moveAndDisplay(uint8_t fireworkX, float fireworkY, Adafruit_SSD1306& display) {
-  if (offScreen) {
-    return 1;
-  }
+bool Spark::moveAndDisplay(uint8_t fireworkX, float fireworkY, Adafruit_SSD1306 & display) {
+  if (offScreen) return 1;
   display.drawPixel(fireworkX + X, fireworkY + Y, WHITE);
-  if (fireworkX + X < 0 or fireworkX + X > 127 or fireworkY + Y > 63) {
-    offScreen = 1;
-  }
+  if (fireworkX + X < 0 or fireworkX + X > 127 or fireworkY + Y > 63) offScreen = 1;
   X += XVelocity; //change position
   Y += YVelocity;
   XVelocity *= .9;
@@ -43,9 +39,7 @@ bool Spark::moveAndDisplay(uint8_t fireworkX, float fireworkY, Adafruit_SSD1306&
 
 Firework::Firework() {
   offScreen = 1;
-  for (uint8_t i = 0; i < 30; i++) {
-    sparks[i] = Spark();
-  }
+  for (uint8_t i = 0; i < 30; i++) sparks[i] = Spark();
 }
 
 void Firework::reset() {
@@ -53,20 +47,14 @@ void Firework::reset() {
   Y = random(0, 64);
   YVelocity = 0;
   offScreen = 0;
-  for (uint8_t i = 0; i < 30; i++) {
-    sparks[i].reset();
-  }
+  for (uint8_t i = 0; i < 30; i++) sparks[i].reset();
 }
 
-void Firework::moveAndDisplay(Adafruit_SSD1306& display) {
+void Firework::moveAndDisplay(Adafruit_SSD1306 & display) {
   if (!offScreen) {
     uint8_t sparksOffScreen = 0;
-    for (uint8_t i = 0; i < 30; i++) {
-      sparksOffScreen += sparks[i].moveAndDisplay(X, Y, display);
-    }
-    if (sparksOffScreen >= 30) {
-      offScreen = 1;
-    }
+    for (uint8_t i = 0; i < 30; i++) sparksOffScreen += sparks[i].moveAndDisplay(X, Y, display);
+    if (sparksOffScreen >= 30) offScreen = 1;
     YVelocity += 0.1;
     Y += YVelocity;
   }
