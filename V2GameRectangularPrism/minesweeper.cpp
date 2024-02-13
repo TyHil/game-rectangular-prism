@@ -89,7 +89,7 @@ void MinesweeperBoard::drawNumber(uint8_t x, uint8_t y, Adafruit_SSD1306& displa
 }
 
 void MinesweeperBoard::drawSelection(uint8_t x, uint8_t y, bool flash, Adafruit_SSD1306& display) { //displays a box around currently selected square
-  display.drawRect(x * sixteenOverArea + 1, y * sixteenOverArea + 1, fourteenOverArea + (x != 8 * (area + 1) - 1), fourteenOverArea + (y != 4 * (area + 1) - 1), flash xor data[x][y] < 9); //flash selection choice like a cursor blinks
+  display.drawRect(x * sixteenOverArea + 1, y * sixteenOverArea + 1, fourteenOverArea + (x != 8 * (area + 1) - 1), fourteenOverArea + (y != 4 * (area + 1) - 1), flash xor (data[x][y] < 9)); //flash selection choice like a cursor blinks
   if (flash) drawNumber(x, y, display);
 }
 

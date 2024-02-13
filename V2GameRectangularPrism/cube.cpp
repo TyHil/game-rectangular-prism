@@ -18,60 +18,46 @@ Cube::Cube() {
   rz = 0;
 }
 
-float Cube::mxx(float a, float x, float y, float z) {
-  return x;
-}
-
-float Cube::mxy(float a, float x, float y, float z) {
-  return y * cos(a) - z * sin(a);
-}
-
-float Cube::mxz(float a, float x, float y, float z) {
-  return y * sin(a) + z * cos(a);
-}
-
-float Cube::myx(float a, float x, float y, float z) {
-  return x * cos(a) + z * sin(a);
-}
-
-float Cube::myy(float a, float x, float y, float z) {
-  return y;
-}
-
-float Cube::myz(float a, float x, float y, float z) {
-  return z * cos(a) - x * sin(a);
-}
-
-float Cube::mzx(float a, float x, float y, float z) {
-  return x * cos(a) - y * sin(a);
-}
-
-float Cube::mzy(float a, float x, float y, float z) {
-  return x * sin(a) + y * cos(a);
-}
-
-float Cube::mzz(float a, float x, float y, float z) {
-  return z;
+float Cube::matrix(Dimension dimension, float a, float x, float y, float z) {
+  if (dimension == xx) {
+    return x;
+  } else if (dimension == xy) {
+    return y * cos(a) - z * sin(a);
+  } else if (dimension == xz) {
+    return y * sin(a) + z * cos(a);
+  } else if (dimension == yx) {
+    return x * cos(a) + z * sin(a);
+  } else if (dimension == yy) {
+    return y;
+  } else if (dimension == yz) {
+    return z * cos(a) - x * sin(a);
+  } else if (dimension == zx) {
+    return x * cos(a) - y * sin(a);
+  } else if (dimension == zy) {
+    return x * sin(a) + y * cos(a);
+  } else if (dimension == zz) {
+    return z;
+  }
 }
 
 void Cube::display(Adafruit_SSD1306& display) {
   float pa1x[16], pa1y[16], pa1z[16];
   for (uint8_t i = 0; i < 16; i++) {
-    pa1x[i] = mxx(rx, px[i], py[i], pz[i]);
-    pa1y[i] = mxy(ry, px[i], py[i], pz[i]);
-    pa1z[i] = mxz(rz, px[i], py[i], pz[i]);
+    pa1x[i] = matrix(xx, rx, px[i], py[i], pz[i]);
+    pa1y[i] = matrix(xy, ry, px[i], py[i], pz[i]);
+    pa1z[i] = matrix(xz, rz, px[i], py[i], pz[i]);
   }
   float pa2x[16], pa2y[16], pa2z[16];
   for (uint8_t i = 0; i < 16; i++) {
-    pa2x[i] = myx(rx, pa1x[i], pa1y[i], pa1z[i]);
-    pa2y[i] = myy(ry, pa1x[i], pa1y[i], pa1z[i]);
-    pa2z[i] = myz(rz, pa1x[i], pa1y[i], pa1z[i]);
+    pa2x[i] = matrix(yx, rx, pa1x[i], pa1y[i], pa1z[i]);
+    pa2y[i] = matrix(yy, ry, pa1x[i], pa1y[i], pa1z[i]);
+    pa2z[i] = matrix(yz, rz, pa1x[i], pa1y[i], pa1z[i]);
   }
   //reuse 1
   for (uint8_t i = 0; i < 16; i++) {
-    pa1x[i] = mzx(rx, pa2x[i], pa2y[i], pa2z[i]);
-    pa1y[i] = mzy(ry, pa2x[i], pa2y[i], pa2z[i]);
-    //pa1z[i] = mzz(rz, pa2x[i], pa2y[i], pa2z[i]);
+    pa1x[i] = matrix(zx, rx, pa2x[i], pa2y[i], pa2z[i]);
+    pa1y[i] = matrix(zy, ry, pa2x[i], pa2y[i], pa2z[i]);
+    //pa1z[i] = matrix(zz, rz, pa2x[i], pa2y[i], pa2z[i]);
   }
   for (uint8_t i = 0; i < 15; i++) {
     display.drawLine(pa1x[i] + 64, pa1y[i] + 32, pa1x[i + 1] + 64, pa1y[i + 1] + 32, WHITE);

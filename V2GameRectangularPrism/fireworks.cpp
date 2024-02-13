@@ -9,8 +9,8 @@
 /* Fireworks */
 
 Fireworks::Fireworks() {
-  uint64_t betweenTimer = millis();
-  uint8_t betweenDur = 0;
+  betweenTimer = millis();
+  betweenDur = 0;
   Firework fireworks[10];// = Firework(random(0, 128), random(0, 64));
   for (uint8_t i = 0; i < 10; i++) {
     fireworks[i] = Firework();

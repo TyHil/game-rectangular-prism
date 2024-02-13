@@ -98,7 +98,8 @@ void Ship::moveAndDisplay(bool changePos, bool shoot, Adafruit_SSD1306& display)
   YVelocity *= .8;
   X = floatMod(X + XVelocity, 128); //move by speed and loop
   Y = floatMod(Y + YVelocity, 64);
-  const float changesX[3] = {sin(dir) * 9, sin(dir + 2.09) * 6, sin(dir + 4.18) * 6,}, changesY[3] = {cos(dir) * 9, cos(dir + 2.09) * 6, cos(dir + 4.18) * 6}; //numbers used a lot
+  const float changesX[3] = {(float)sin(dir) * 9, (float)sin(dir + 2.09) * 6, (float)sin(dir + 4.18) * 6}; //numbers used a lot
+  const float changesY[3] = {(float)cos(dir) * 9, (float)cos(dir + 2.09) * 6, (float)cos(dir + 4.18) * 6};
   for (uint8_t i = 0; i < 3; i++) { //same 2nd and 3rd dimension calulations
     XPoints[i][i] = floatMod(X + changesX[i], 128);
     YPoints[i][i] = floatMod(Y + changesY[i], 64);
@@ -202,5 +203,14 @@ void Asteroid::moveAndDisplay(Adafruit_SSD1306& display) {
 
 //point in square
 bool Asteroid::pointInAsteroid(uint8_t XGiven, uint8_t YGiven) {
-  return ((X + Size > 128 and (XGiven >= 0 and XGiven < (uint8_t) (X + Size) % 128 or XGiven >= X and XGiven < 128) or X + Size <= 128 and (XGiven >= X and XGiven < X + Size)) and/*big and between X and Y*/ (Y + Size > 64 and (YGiven >= 0 and YGiven < (uint8_t) (Y + Size) % 64 or YGiven >= Y and YGiven < 64) or Y + Size <= 64 and (YGiven >= Y and YGiven < Y + Size)));
+  return (
+    (
+      X + Size > 128 and (XGiven < (uint8_t) (X + Size) % 128 or (XGiven >= X and XGiven < 128)) or
+      X + Size <= 128 and (XGiven >= X and XGiven < X + Size)
+    ) and
+    (
+      Y + Size > 64 and (YGiven < (uint8_t) (Y + Size) % 64 or (YGiven >= Y and YGiven < 64)) or
+      Y + Size <= 64 and (YGiven >= Y and YGiven < Y + Size)
+    )
+  );
 }
