@@ -190,7 +190,7 @@ void Asteroids::winCheck(Adafruit_SSD1306& display) { //win check: all asteroids
     waitAnyClick();
     delay(500);
     if (score > readEEPROM(24) or (score == readEEPROM(24) and level > readEEPROM(23))) newHighScore(display, level, score);
-    digitalWrite(6, LOW);
+    resetFunc();
   }
 }
 
@@ -212,7 +212,7 @@ void Asteroids::loseCheck(Adafruit_SSD1306& display) {
       waitAnyClick();
       delay(500);
       if (score > readEEPROM(24)) newHighScore(display, level, score);
-      digitalWrite(6, LOW);
+      resetFunc();
     }
   }
 }

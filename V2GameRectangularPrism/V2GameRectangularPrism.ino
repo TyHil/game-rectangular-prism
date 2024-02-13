@@ -49,7 +49,7 @@ void gameChanger() { //update app selection and restart arduino on choice
     disp = true;
   } else if (digitalRead(2) or digitalRead(3)) {
     updateEEPROM(25, app);
-    digitalWrite(6, LOW);
+    resetFunc();
   }
 }
 

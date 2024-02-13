@@ -191,7 +191,7 @@ void Minesweeper::loseCheck(Adafruit_SSD1306& display) {
     display.print("Over");
     display.display();
     delay(1000);
-    digitalWrite(6, LOW);
+    resetFunc();
   }
 }
 
@@ -216,7 +216,7 @@ void Minesweeper::winCheck(Adafruit_SSD1306& display) {
     display.display();
     delay(500);
     waitAnyClick();
-    digitalWrite(6, LOW);
+    resetFunc();
   }
 }
 

@@ -7,6 +7,14 @@
 
 
 
+/* Reset Function */
+
+void resetFunc() {
+  digitalWrite(6, LOW);
+}
+
+
+
 /* Wait Functions */
 
 void waitAnyClick() { //waits until any button is pressed

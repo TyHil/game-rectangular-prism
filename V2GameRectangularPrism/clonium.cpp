@@ -269,7 +269,7 @@ void Clonium::winCheck(Adafruit_SSD1306& display) {
     delay(500);
     waitAnyClick();
     delay(500);
-    digitalWrite(6, LOW);
+    resetFunc();
   }
 }
 

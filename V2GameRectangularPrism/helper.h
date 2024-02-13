@@ -9,6 +9,13 @@
 #include <Adafruit_SSD1306.h>
 
 
+
+/* Reset Function */
+
+void resetFunc();
+
+
+
 /* Wait Functions */
 
 void waitAnyClick();

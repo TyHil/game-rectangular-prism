@@ -180,7 +180,7 @@ void AstroParty::winCheck(Adafruit_SSD1306& display) { //laser ship collision (p
     delay(500);
     waitAnyClick();
     delay(500);
-    digitalWrite(6, LOW);
+    resetFunc();
   }
 }
 
