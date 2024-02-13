@@ -9,8 +9,8 @@
     digitalRead operation in refrence to buttons is reversed.
     Uses reset function instead of writing pin 6 (wired to the reset pin) low.
 */
-#include "helper.h"
 #include "astroParty.h"
+#include "helper.h"
 Adafruit_SSD1306 display(128, 64, &Wire, -1);
 
 

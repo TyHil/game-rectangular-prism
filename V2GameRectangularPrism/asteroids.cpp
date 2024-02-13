@@ -5,7 +5,7 @@
 #include "asteroids.h"
 #include "helper.h"
 
-void displayAsteroidsHighScores(Adafruit_SSD1306& display) { //displays list of high scores for Asteroids
+void displayAsteroidsHighScores(Adafruit_SSD1306 & display) { //displays list of high scores for Asteroids
   display.setTextSize(1); //top row text
   display.setCursor(30, 0);
   display.print(" High Scores");
@@ -33,7 +33,7 @@ void displayAsteroidsHighScores(Adafruit_SSD1306& display) { //displays list of 
   }
 }
 
-void displayAsteroidsLevel(Adafruit_SSD1306& display, uint8_t _level) {
+void displayAsteroidsLevel(Adafruit_SSD1306 & display, uint8_t _level) {
   display.setTextSize(2);
   display.setCursor(40, 0);
   display.print("Level");
@@ -46,9 +46,11 @@ void displayAsteroidsLevel(Adafruit_SSD1306& display, uint8_t _level) {
   display.print(12 * _level + 15);
 }
 
-void newHighScore(Adafruit_SSD1306& display, int8_t level, uint8_t score) { //sets a new high score for Asteroids
+void newHighScore(Adafruit_SSD1306 & display, int8_t level, uint8_t score) { //sets a new high score for Asteroids
   int8_t i; //move lesser high scores down
-  for (i = 3; i >= 0; i--) if (score > readEEPROM(5 * i + 4) or (score == readEEPROM(5 * i + 4) and level > readEEPROM(5 * i + 3))) for (uint8_t j = 0; j < 5; j++) updateEEPROM(5 * (i + 1) + j, readEEPROM(5 * i + j));
+  for (i = 3; i >= 0; i--)
+    if (score > readEEPROM(5 * i + 4) or (score == readEEPROM(5 * i + 4) and level > readEEPROM(5 * i + 3)))
+      for (uint8_t j = 0; j < 5; j++) updateEEPROM(5 * (i + 1) + j, readEEPROM(5 * i + j));
     else break;
   i++;
   uint8_t name[3] = {65, 65, 65}; //name storage
@@ -63,9 +65,8 @@ void newHighScore(Adafruit_SSD1306& display, int8_t level, uint8_t score) { //se
       display.setCursor(15, 21);
       display.print("High Score");
       display.setCursor(45, 42);
-      for (uint8_t l = 0; l < 3; l++) { //pring current name
+      for (uint8_t l = 0; l < 3; l++) //pring current name
         display.print(char(name[l]));
-      }
       display.fillRect(12 * k + 44, 41, 12, 16, WHITE); //fill current selection
       display.setCursor(12 * k + 45, 42);
       display.setTextColor(BLACK);
@@ -121,9 +122,7 @@ void Asteroids::turning() {
   if (millis() - shipTurnTiming >= 50) {
     if (tiltToTurn) { //turning
       int8_t angle = atan(tilt.getPitch()) * 180 / M_PI; //degrees
-      if (angle > 2 or angle < -2) {
-        ship.turn((M_PI * min(angle, 20)) / (8 * 20));
-      }
+      if (angle > 2 or angle < -2) ship.turn((M_PI * min(angle, 20)) / (8 * 20));
       shipTurnTiming = millis();
     } else {
       if (digitalRead(5)) {
@@ -137,11 +136,9 @@ void Asteroids::turning() {
   }
 }
 
-void Asteroids::move(Adafruit_SSD1306& display) {
+void Asteroids::move(Adafruit_SSD1306 & display) {
   ship.moveAndDisplay(digitalRead(2), digitalRead(tiltToTurn ? 5 : 3), display); //only move if button pressed
-  for (uint8_t i = 0; i < 2 * (level + 1); i++) {
-    asteroids[i].moveAndDisplay(display);
-  }
+  for (uint8_t i = 0; i < 2 * (level + 1); i++) asteroids[i].moveAndDisplay(display);
 }
 
 void Asteroids::asteroidLaserCollision() {
@@ -172,7 +169,7 @@ void Asteroids::asteroidLaserCollision() {
   }
 }
 
-void Asteroids::winCheck(Adafruit_SSD1306& display) { //win check: all asteroids have size 0
+void Asteroids::winCheck(Adafruit_SSD1306 & display) { //win check: all asteroids have size 0
   uint8_t i;
   for (i = 0; i < 2 * (level + 1) and asteroids[i].Size == 0; i++) {}
   if (i >= 2 * (level + 1)) { //uesd to be > 21
@@ -189,15 +186,18 @@ void Asteroids::winCheck(Adafruit_SSD1306& display) { //win check: all asteroids
     delay(500);
     waitAnyClick();
     delay(500);
-    if (score > readEEPROM(24) or (score == readEEPROM(24) and level > readEEPROM(23))) newHighScore(display, level, score);
+    if (score > readEEPROM(24) or (score == readEEPROM(24) and level > readEEPROM(23)))
+      newHighScore(display, level, score);
     resetFunc();
   }
 }
 
-void Asteroids::loseCheck(Adafruit_SSD1306& display) {
+void Asteroids::loseCheck(Adafruit_SSD1306 & display) {
   for (uint8_t i = 0; i < 2 * (level + 1); i++) {
     bool over = false;
-    for (uint8_t m = 0; m < 3; m++) if (asteroids[i].pointInAsteroid(ship.XPoints[m][m], ship.YPoints[m][m])) over = true; //if any ship corners
+    for (uint8_t m = 0; m < 3; m++)
+      if (asteroids[i].pointInAsteroid(ship.XPoints[m][m], ship.YPoints[m][m]))
+        over = true; //if any ship corners
     if (over or asteroids[i].pointInAsteroid(ship.X, ship.Y)) { //or the ship center are in an asteroid
       display.display();
       display.setTextSize(2);
@@ -217,7 +217,7 @@ void Asteroids::loseCheck(Adafruit_SSD1306& display) {
   }
 }
 
-void Asteroids::run(Adafruit_SSD1306& display) {
+void Asteroids::run(Adafruit_SSD1306 & display) {
   while (true) {
     display.clearDisplay();
     turning();

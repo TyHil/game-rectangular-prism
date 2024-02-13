@@ -33,7 +33,7 @@ void Level::correctPitch() {
   pitchCorrection = getPitchWOCorrection();
 }
 
-void Level::display(Adafruit_SSD1306& display) {
+void Level::display(Adafruit_SSD1306 & display) {
   if (IMU.accelerationAvailable()) {
     display.clearDisplay();
     pitch = getPitch();
@@ -42,11 +42,9 @@ void Level::display(Adafruit_SSD1306& display) {
     display.setCursor(64 - 10 * (String(angle).length() + 1) - 2 * String(angle).length(), 16);
     display.print(angle);
     display.write(0xF8);
-    for (uint8_t x = 0; x < 128; x++) {
-      for (int16_t y = min(max((pitch) * (x - 64) + 32, 0), 66) - 2; y < 64; y++) { //for pixels past level line
+    for (uint8_t x = 0; x < 128; x++)
+      for (int16_t y = min(max((pitch) * (x - 64) + 32, 0), 66) - 2; y < 64; y++) //for pixels past level line
         display.drawPixel(x, y, !display.getPixel(x, y)); //invert color
-      }
-    }
     display.display();
   }
 }

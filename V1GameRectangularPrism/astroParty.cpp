@@ -6,7 +6,7 @@
 #include "helper.h"
 const String powers[] = {"Reverse", "Laser"};
 
-void displayAstroPartyStart(Adafruit_SSD1306& display) {
+void displayAstroPartyStart(Adafruit_SSD1306 & display) {
   display.setTextSize(1);
   display.setCursor(30, 0);
   display.print("Astro Party");
@@ -22,15 +22,9 @@ void displayAstroPartyStart(Adafruit_SSD1306& display) {
 AstroParty::AstroParty() {
   ships[0] = Ship(32, 32, 0, 0);
   ships[1] = Ship(96, 32, (3 / 2) * M_PI, 1);
-  for (uint8_t i = 0; i < 4; i++) {
-    asteroids[i] = Asteroid(8, 0, 1);
-  }
-  for (uint8_t i = 4; i < 8; i++) {
-    asteroids[i] = Asteroid(16, i == 4 or i == 5, 1);
-  }
-  for (uint8_t i = 8; i < 12; i++) {
-    asteroids[i] = Asteroid(0, 0, 1);
-  }
+  for (uint8_t i = 0; i < 4; i++) asteroids[i] = Asteroid(8, 0, 1);
+  for (uint8_t i = 4; i < 8; i++) asteroids[i] = Asteroid(16, i == 4 or i == 5, 1);
+  for (uint8_t i = 8; i < 12; i++) asteroids[i] = Asteroid(0, 0, 1);
   for (uint8_t i = 0; i < 2; i++) {
     shipTurnTiming[i] = millis();
     lastNoTurn[i] = millis();
@@ -65,10 +59,9 @@ void AstroParty::turning() {
   }
 }
 
-void AstroParty::move(Adafruit_SSD1306& display) {
-  for (uint8_t i = 0; i < 12; i++) { //asteroid movement and display
+void AstroParty::move(Adafruit_SSD1306 & display) {
+  for (uint8_t i = 0; i < 12; i++) //asteroid movement and display
     asteroids[i].moveAndDisplay(display);
-  }
   if (millis() - asteroidSpawn >= 15000) { //spawn asteroids
     for (uint8_t j = 0; j < 2; j++) {
       uint8_t i, k = 0, count16 = 0, count0 = 0;
@@ -95,12 +88,21 @@ void AstroParty::move(Adafruit_SSD1306& display) {
       if (ships[z].power == 2) {
         for (int8_t x = -1; x < 2; x++) {
           for (int8_t y = -1; y < 2; y++) {
-            display.drawLine(ships[z].XPoints[0][0] + x, ships[z].YPoints[0][0] + y, (int16_t) (ships[z].XPoints[0][0] + sin(ships[z].dir) * 142) + x, (uint16_t) (ships[z].YPoints[0][0] + cos(ships[z].dir) * 142) + y, WHITE);
+            display.drawLine(
+              ships[z].XPoints[0][0] + x,
+              ships[z].YPoints[0][0] + y,
+              (int16_t)(ships[z].XPoints[0][0] + sin(ships[z].dir) * 142) + x,
+              (uint16_t)(ships[z].YPoints[0][0] + cos(ships[z].dir) * 142) + y,
+              WHITE
+            );
           }
         }
         display.display();
         for (uint8_t i = 0; i <= 142; i++) {
-          if (ships[z ? 0 : 1].pointInShip(ships[z].XPoints[0][0] + sin(ships[z].dir) * i, ships[z].YPoints[0][0] + cos(ships[z].dir) * i)) { //game won and over
+          if (ships[z ? 0 : 1].pointInShip(
+                ships[z].XPoints[0][0] + sin(ships[z].dir) * i,
+                ships[z].YPoints[0][0] + cos(ships[z].dir) * i
+              )) { //game won and over
             win = 1;
             winner = !z;
           }
@@ -126,11 +128,8 @@ void AstroParty::asteroidLaserCollision() {
                     uint8_t power = random(1, 3);
                     textDisplayNum = power - 1;
                     textDisplay = millis();
-                    if (power == 1) {
-                      turnDir = !turnDir;
-                    } else if (power > 1) {
-                      ships[z].power = power;
-                    }
+                    if (power == 1) turnDir = !turnDir;
+                    else if (power > 1) ships[z].power = power;
                   }
                   if (asteroids[i].Size == 8) {
                     uint8_t l;
@@ -150,7 +149,7 @@ void AstroParty::asteroidLaserCollision() {
   }
 }
 
-void AstroParty::winCheck(Adafruit_SSD1306& display) { //laser ship collision (point in traingle)
+void AstroParty::winCheck(Adafruit_SSD1306 & display) { //laser ship collision (point in traingle)
   if (win != 1) { //can already be 1 from laser power up
     for (uint8_t z = 0; z < 2; z++) { //each ship
       for (uint8_t i = 0; i < 2; i++) { //each laser
@@ -184,7 +183,7 @@ void AstroParty::winCheck(Adafruit_SSD1306& display) { //laser ship collision (p
   }
 }
 
-void AstroParty::powerUpDisplay(Adafruit_SSD1306& display) {
+void AstroParty::powerUpDisplay(Adafruit_SSD1306 & display) {
   if (millis() - textDisplay < 500) {
     display.setCursor((128 - powers[textDisplayNum].length() * 12) / 2, 24);
     display.setTextSize(2);
@@ -192,7 +191,7 @@ void AstroParty::powerUpDisplay(Adafruit_SSD1306& display) {
   }
 }
 
-void AstroParty::run(Adafruit_SSD1306& display) {
+void AstroParty::run(Adafruit_SSD1306 & display) {
   while (true) {
     display.clearDisplay();
     turning();
