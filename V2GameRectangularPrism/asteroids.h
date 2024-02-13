@@ -1,5 +1,5 @@
 /*
-  Random Number Generator app header
+  Asteroids app header
   Written by Tyler Gordon Hill
 */
 #include "shipAsteroidLaser.h"

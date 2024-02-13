@@ -1,5 +1,5 @@
 /*
-  Random Number Generator app implementation
+  Asteroids app implementation
   Written by Tyler Gordon Hill
 */
 #include "asteroids.h"
