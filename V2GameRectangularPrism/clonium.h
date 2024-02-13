@@ -30,8 +30,7 @@ class Clonium {
   public:
     uint8_t players;
     uint8_t mx, my, mxLast[2], myLast[2]; //play choice, last choice
-    bool turn, flash; //turn, flashing selection
-    uint64_t buttonTime, flashTime;
+    bool turn; //turn, flashing selection
     CloniumBoard board;
     Clonium(uint8_t setXDim, uint8_t setYDim, uint8_t setPlayers);
     void takeTurn(Adafruit_SSD1306& display);

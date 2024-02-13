@@ -12,7 +12,7 @@
 #include "asteroids.h"
 #include "astroParty.h"
 #include "clonium.h"
-#include "boards.h"
+#include "minesweeper.h"
 #include "randomNum.h"
 #include "level.h"
 #include "fireworks.h"
@@ -179,13 +179,13 @@ void setup() {
         display.display();
       }
       if (screen.buttons()) {
-        if (screen.screen == 0) gameChanger();
+        if (screen.screen == -1) gameChanger();
         if (digitalRead(5) or digitalRead(4) or digitalRead(3) or digitalRead(2)) {
           disp = true;
         }
         if (screen.screen >= 0) {
           if (digitalRead(3) and screen.screen < 2) {
-            nums[screen.screen] = max(nums[level] - 1, 1 + 1 * (nums[0] * nums[1] == 2));
+            nums[screen.screen] = max(nums[screen.screen] - 1, 1 + 1 * (nums[0] * nums[1] == 2));
           } else if (digitalRead(2) and screen.screen < 2) {
             nums[screen.screen] = min(nums[screen.screen] + 1, !screen.screen * 16 + screen.screen * 8);
           } else if (screen.screen == 2 and (digitalRead(3) or digitalRead(2))) { //small board
@@ -211,171 +211,50 @@ void setup() {
   /* Minesweeper */
 
   else if (app == minesweeper) {
-    int8_t level = 4;
-    uint64_t generalTimer = millis();
-    uint8_t nums[3] = {8, 4, 5};
-    const String names[6] = {"X", "Y", "Mines", "Start", "Small", "Large"};
+    Screen screen = Screen(-1, 5, 3);
+    uint8_t nums[3] = {8, 4, 5}; //XDim, YDim, Mines
 
     /*Setup*/
-    while ((digitalRead(2) == 0 and digitalRead(3) == 0) or level != 4) { //choose size and number of mines
+    while ((digitalRead(2) == 0 and digitalRead(3) == 0) or screen.screen != 3) {
       if (disp) { //only display if something changes
         disp = false;
         display.clearDisplay();
-        if (level > 0) {
-          display.setTextSize(1);
-          display.setCursor(30, 0);
-          display.print("Minesweeper");
-          for (uint8_t i = 0; i < 4; i++) {
-            uint8_t y = 1;
-            for (uint8_t j = 0; j < min(i, 3); j++) y += (names[j].length() + 1) * 6 + (j == 0) * 18 + (j == 1) * 6;
-            display.setCursor(y, 15);
-            display.setTextSize(1);
-            display.print(names[i]);
-            display.setCursor(y, 30);
-            if (i < 3) {
-              display.setTextSize(2);
-              display.print(nums[i]);
-            } else {
-              display.print(names[4]);
-              display.setCursor(y, 45);
-              display.print(names[5]);
-            }
-          }
-          display.setTextColor(BLACK);
-          uint8_t y = 1;
-          for (uint8_t j = 0; j < min(level - 1, 3); j++) y += (names[j].length() + 1) * 6 + (j == 0) * 18 + (j == 1) * 6;
-          display.fillRect(y - 1, 15 * max(level, 4) - 46, names[level - 1].length() * 6 + 1, 9, WHITE);
-          display.setCursor(y, 15 * max(level, 4) - 45);
-          display.setTextSize(1);
-          display.print(names[level - 1]);
-          display.setTextColor(WHITE);
-        } else gameChangerDisplay();
+        if (screen.screen == -1) { //app selection
+          gameChangerDisplay();
+        } else { //start display
+          displayMinesweeperSetup(display, screen.screen, nums[0], nums[1], nums[2]);
+        }
         display.display();
       }
-      if (millis() - generalTimer >= 100) {
-        if (digitalRead(4)) {
-          level = min(level + 1, 6);
-          generalTimer = millis();
+      if (screen.buttons()) {
+        if (screen.screen == -1) gameChanger();
+        if (digitalRead(5) or digitalRead(4) or digitalRead(3) or digitalRead(2)) {
           disp = true;
         }
-        if (level > 0) {
-          if (digitalRead(5)) {
-            level = max(level - 1, 0);
-            generalTimer = millis();
-            disp = true;
-          } else if (digitalRead(3) and level < 4) {
-            nums[level - 1] = max(nums[level - 1] - 1, 1 + 1 * (level != 3 and nums[0] * nums[1] == 2));
+        if (screen.screen >= 0) {
+          if (digitalRead(3) and screen.screen < 3) {
+            nums[screen.screen] = max(nums[screen.screen] - 1, 1 + 1 * (screen.screen != 2 and nums[0] * nums[1] == 2));
             nums[2] = min(nums[0] * nums[1] - 1, nums[2]);
-            generalTimer = millis();
-            disp = true;
-          } else if (digitalRead(2) and level < 4) {
-            nums[level - 1] = min(nums[level - 1] + 1, (level == 1) * 16 + (level == 2) * 8 + (level == 3) * (nums[0] * nums[1] - 1));
-            generalTimer = millis();
-            disp = true;
-          } else if (level == 5 and (digitalRead(3) or digitalRead(2))) { //small board
+          } else if (digitalRead(2) and screen.screen < 4) {
+            nums[screen.screen] = min(nums[screen.screen] + 1, (screen.screen == 0) * 16 + (screen.screen == 1) * 8 + (screen.screen == 2) * (nums[0] * nums[1] - 1));
+          } else if (screen.screen == 4 and (digitalRead(3) or digitalRead(2))) { //small board
             nums[0] = 8;
             nums[1] = 4;
             nums[2] = 5;
-            generalTimer = millis();
-            disp = true;
-          } else if (level == 6 and (digitalRead(3) or digitalRead(2))) { //large board
+          } else if (screen.screen == 5 and (digitalRead(3) or digitalRead(2))) { //large board
             nums[0] = 16;
             nums[1] = 8;
             nums[2] = 19;
-            generalTimer = millis();
-            disp = true;
           }
-        } else if (level == 0) gameChanger();
-        delay(50);
+        }
       }
+      delay(50);
     }
-    uint8_t mx = 0, my = 0; //play choice
-    boolean gen = 1, flash = 0;
-    disp = true;
-    MinesweeperBoard board = MinesweeperBoard(nums[0], nums[1], nums[2]);
-    board.draw(0, display);
-    display.display();
     waitAllUnclick();
-    uint64_t flashTime = 0, scoreTime = millis(); //timers for flashing selection and score
+    Minesweeper minesweeper = Minesweeper(nums[0], nums[1], nums[2]);
 
     /*Game*/
-    while (true) {
-      while (digitalRead(2) == 0 or (board.data[mx][my] != 9 and board.data[mx][my] != 11)) { //choose place
-        if (disp) { //only display if something changes
-          board.draw(0, display);
-          flash = 0;
-        }
-        if (disp or millis() - flashTime >= 500) { //flash selection
-          disp = false;
-          board.drawSelection(mx, my, flash, display);
-          flash = !flash;
-          flashTime = millis();
-          display.display();
-        }
-        if (millis() - generalTimer >= 100) {
-          if (digitalRead(4)) {
-            mx = (mx + 1) % board.XDim;
-            generalTimer = millis();
-            disp = true;
-          } else if (digitalRead(5)) {
-            my = (my + 1) % board.YDim;
-            generalTimer = millis();
-            disp = true;
-          } else if (digitalRead(3) and board.data[mx][my] > 8) {
-            if (board.data[mx][my] < 11) board.data[mx][my] = -board.data[mx][my] + 19; //swap 9 and 10
-            else board.data[mx][my] = -board.data[mx][my] + 23; //swap 11 and 12
-            disp = true;
-          }
-        }
-        delay(50);
-      }
-      if (gen) { //generate mines first time through
-        board.generateMines(mx, my);
-        gen = 0;
-      }
-      if (board.data[mx][my] == 11) { //check for loss
-        board.draw(1, display);
-        board.drawSelection(mx, my, 0, display);
-        display.display();
-        delay(500);
-        waitAnyClick();
-        display.clearDisplay();
-        display.setTextSize(2);
-        display.setCursor(40, 10);
-        display.print("Game");
-        display.setCursor(40, 31);
-        display.print("Over");
-        display.display();
-        delay(1000);
-        digitalWrite(6, LOW);
-      }
-      board.mover(mx, my);
-      board.draw(0, display);
-      display.display();
-      if (board.winCheck()) {
-        scoreTime = min((millis() - scoreTime) / 1000, 255);
-        board.draw(1, display);
-        display.display();
-        delay(500);
-        waitAnyClick();
-        display.clearDisplay();
-        display.setTextSize(2);
-        display.setCursor(45, 0);
-        display.print("You");
-        display.setCursor(45, 21);
-        display.print("Win");
-        display.setCursor(45, 42);
-        display.print((uint8_t)(scoreTime / 60));
-        display.print(":");
-        if (scoreTime % 60 < 10) display.print(0);
-        display.print(scoreTime % 60);
-        display.display();
-        delay(500);
-        waitAnyClick();
-        digitalWrite(6, LOW);
-      }
-      delay(200);
-    }
+    minesweeper.run(display);
   }
 
 

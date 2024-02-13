@@ -17,15 +17,17 @@ void displayCloniumSetup(Adafruit_SSD1306& display, int16_t screen, uint8_t XDim
     display.setTextSize(1);
     display.print(names[i + (i == 3)]);
     display.setCursor(y, 30);
-    if (i == 0) {
+    if (i == 0 or i == 1) {
       display.setTextSize(2);
+    }
+    if (i == 0) {
       display.print(XDim);
     } else if (i == 1) {
-      display.setTextSize(2);
       display.print(YDim);
     } else {
       display.print(names[i + 1 + (i == 3)]);
-    } if (i == 3) {
+    }
+    if (i == 3) {
       display.setCursor(y, 45);
       display.print(names[6]);
     }
@@ -194,13 +196,11 @@ Clonium::Clonium(uint8_t setXDim, uint8_t setYDim, uint8_t setPlayers): board(se
   myLast[0] = my;
   myLast[1] = (uint8_t)max(setYDim - 1  - spaceFromEdges, 0);
   turn = 0;
-  flash = 0;
-  buttonTime = millis();
-  flashTime = millis();
 }
 
 void Clonium::takeTurn(Adafruit_SSD1306& display) {
-  bool disp = false;
+  bool disp = false, flash = false;
+  uint64_t buttonTime = millis(), flashTime = millis();
   if ((players == 1 and turn) or players == 0) { //CPU
     board.CPUMove(turn, display);
   } else { //player

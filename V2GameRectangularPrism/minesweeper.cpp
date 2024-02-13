@@ -1,9 +1,46 @@
 /*
-  Board library implementation for Clonium and Minesweeper
+  Minesweeper app implementation
   Written by Tyler Gordon Hill
 */
-#include "boards.h"
+#include "minesweeper.h"
 #include "helper.h"
+const String names[6] = {"X", "Y", "Mines", "Start", "Small", "Large"};
+
+void displayMinesweeperSetup(Adafruit_SSD1306& display, int16_t screen, uint8_t XDim, uint8_t YDim, uint8_t mines) {
+  display.setTextSize(1);
+  display.setCursor(30, 0);
+  display.print("Minesweeper");
+  for (uint8_t i = 0; i < 4; i++) {
+    uint8_t y = 1;
+    for (uint8_t j = 0; j < min(i, 3); j++) y += (names[j].length() + 1) * 6 + (j == 0) * 18 + (j == 1) * 6;
+    display.setCursor(y, 15);
+    display.setTextSize(1);
+    display.print(names[i]);
+    display.setCursor(y, 30);
+    if (i == 0 or i == 1 or i == 2) {
+      display.setTextSize(2);
+    }
+    if (i == 0) {
+      display.print(XDim);
+    } else if (i == 1) {
+      display.print(YDim);
+    } else if (i == 2) {
+      display.print(mines);
+    } else {
+      display.print(names[4]);
+      display.setCursor(y, 45);
+      display.print(names[5]);
+    }
+  }
+  display.setTextColor(BLACK);
+  uint8_t y = 1;
+  for (uint8_t j = 0; j < min(screen, 3); j++) y += (names[j].length() + 1) * 6 + (j == 0) * 18 + (j == 1) * 6;
+  display.fillRect(y - 1, 15 * max(screen + 1, 4) - 46, names[screen].length() * 6 + 1, 9, WHITE);
+  display.setCursor(y, 15 * max(screen + 1, 4) - 45);
+  display.setTextSize(1);
+  display.print(names[screen]);
+  display.setTextColor(WHITE);
+}
 
 
 
@@ -92,4 +129,110 @@ boolean MinesweeperBoard::winCheck() {
   uint8_t discoveredSquares = 0; //found any mines that have not been flagged
   for (uint8_t x = 0; x < XDim; x++) for (uint8_t y = 0; y < YDim; y++) if (data[x][y] < 9) discoveredSquares++; //check for win
   return XDim * YDim - discoveredSquares == mines;
+}
+
+
+
+/* Clonium */
+
+Minesweeper::Minesweeper(uint8_t setXDim, uint8_t setYDim, uint8_t setMines): board(setXDim, setYDim, setMines) {
+  mx = 0;
+  my = 0;
+  gen = 1;
+  scoreTime = millis();
+}
+
+void Minesweeper::takeTurn(Adafruit_SSD1306& display) {
+  bool disp = true, flash = false;
+  uint64_t buttonTime = millis(), flashTime = millis();
+  while (digitalRead(2) == 0 or (board.data[mx][my] != 9 and board.data[mx][my] != 11)) { //choose place
+    if (disp) { //only display if something changes
+      board.draw(0, display);
+      flash = 0;
+    }
+    if (disp or millis() - flashTime >= 500) { //flash selection
+      disp = false;
+      board.drawSelection(mx, my, flash, display);
+      flash = !flash;
+      flashTime = millis();
+      display.display();
+    }
+    if (millis() - buttonTime >= 100) {
+      if (digitalRead(4)) {
+        mx = (mx + 1) % board.XDim;
+        buttonTime = millis();
+        disp = true;
+      } else if (digitalRead(5)) {
+        my = (my + 1) % board.YDim;
+        buttonTime = millis();
+        disp = true;
+      } else if (digitalRead(3) and board.data[mx][my] > 8) {
+        if (board.data[mx][my] < 11) board.data[mx][my] = -board.data[mx][my] + 19; //swap 9 and 10
+        else board.data[mx][my] = -board.data[mx][my] + 23; //swap 11 and 12
+        disp = true;
+      }
+    }
+    delay(50);
+  }
+}
+
+void Minesweeper::loseCheck(Adafruit_SSD1306& display) {
+  if (board.data[mx][my] == 11) {
+    board.draw(1, display);
+    board.drawSelection(mx, my, 0, display);
+    display.display();
+    delay(500);
+    waitAnyClick();
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setCursor(40, 10);
+    display.print("Game");
+    display.setCursor(40, 31);
+    display.print("Over");
+    display.display();
+    delay(1000);
+    digitalWrite(6, LOW);
+  }
+}
+
+void Minesweeper::winCheck(Adafruit_SSD1306& display) {
+  if (board.winCheck()) {
+    scoreTime = min((millis() - scoreTime) / 1000, 255);
+    board.draw(1, display);
+    display.display();
+    delay(500);
+    waitAnyClick();
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setCursor(45, 0);
+    display.print("You");
+    display.setCursor(45, 21);
+    display.print("Win");
+    display.setCursor(45, 42);
+    display.print((uint8_t)(scoreTime / 60));
+    display.print(":");
+    if (scoreTime % 60 < 10) display.print(0);
+    display.print(scoreTime % 60);
+    display.display();
+    delay(500);
+    waitAnyClick();
+    digitalWrite(6, LOW);
+  }
+}
+
+
+void Minesweeper::run(Adafruit_SSD1306& display) {
+  while (true) {
+    takeTurn(display);
+    if (gen) { //generate mines first time through
+      board.generateMines(mx, my);
+      gen = 0;
+    }
+    loseCheck(display);
+    board.mover(mx, my);
+    board.draw(0, display);
+    display.display();
+    winCheck(display);
+    delay(200);
+  }
 }
