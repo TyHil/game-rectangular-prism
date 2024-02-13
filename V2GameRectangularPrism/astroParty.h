@@ -8,8 +8,7 @@ class AstroParty {
   public:
     Ship ships[2];
     Asteroid asteroids[12];
-    Laser lasers[2][2];
-    uint64_t laserButtonTiming[2], shipTurnTiming[2], lastNoTurn[2], lastTurn[2], secondLastNoTurn[2], asteroidSpawn; //timers for button presses
+    uint64_t shipTurnTiming[2], lastNoTurn[2], lastTurn[2], secondLastNoTurn[2], asteroidSpawn; //timers for button presses
     int64_t textDisplay;
     bool turnDir, win, winner;
     uint8_t textDisplayNum;

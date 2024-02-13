@@ -154,18 +154,9 @@ void Asteroids::turning() {
 }
 
 void Asteroids::move(Adafruit_SSD1306& display) {
-  ship.moveAndDisplay(digitalRead(2), new bool[2] {lasers[0].readyToShoot(), lasers[1].readyToShoot()}, display); //only move if button pressed
+  ship.moveAndDisplay(digitalRead(2), digitalRead(tiltToTurn ? 5 : 3), display); //only move if button pressed
   for (uint8_t i = 0; i < 2 * (level + 1); i++) {
     asteroids[i].moveAndDisplay(display);
-  }
-  for (uint8_t i = 0; i < 2; i++) { //shoot laser on button press
-    if (digitalRead(tiltToTurn ? 5 : 3) and lasers[i].readyToShoot() and millis() - laserButtonTiming > 100) {
-      lasers[i].setUp(ship.dir, ship.X + sin(ship.dir) * 3, ship.Y + cos(ship.dir) * 3, ship.XVelocity, ship.YVelocity); //from tip of ship with additionall ship velocity added
-      laserButtonTiming = millis();
-    }
-    if (lasers[i].readyToMove()) {
-      lasers[i].moveAndDisplay(display);
-    }
   }
 }
 
@@ -173,12 +164,12 @@ void Asteroids::asteroidLaserCollision() {
   for (uint8_t i = 0; i < 2 * (level + 1); i++) {
     if (asteroids[i].Size != 0) {
       for (uint8_t m = 0; m < 2; m++) { //every laser
-        if (lasers[m].readyToMove()) {
+        if (ship.lasers[m].readyToMove()) {
           for (uint8_t n = 0; n < 2; n++) { //every point on every laser
             for (uint8_t o = 0; o < 2; o++) {
-              if (asteroids[i].pointInAsteroid(lasers[m].X + n, lasers[m].Y + o)) {
-                lasers[m].hit = true;
-                asteroids[i].hit(lasers[m].dir);
+              if (asteroids[i].pointInAsteroid(ship.lasers[m].X + n, ship.lasers[m].Y + o)) {
+                ship.lasers[m].hit = true;
+                asteroids[i].hit(ship.lasers[m].dir);
                 if (asteroids[i].Size == 8) { //spilts and a new asteroid needs to be created
                   score += 1;
                   uint8_t l;

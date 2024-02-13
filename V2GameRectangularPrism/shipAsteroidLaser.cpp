@@ -26,11 +26,53 @@ float area(int16_t x1, int16_t y1, int16_t x2, int16_t y2, int16_t x3, int16_t y
 
 
 
+/* Laser */
+
+Laser::Laser() {}
+
+void Laser::setUp(float setDir, uint8_t setX, uint8_t setY, float setXVelocity, float setYVelocity) {
+  dir = setDir;
+  shotTime = millis();
+  hit = false;
+  X = setX;
+  Y = setY;
+  XDist = 0;
+  YDist = 0;
+  XVelocity = setXVelocity;
+  YVelocity = setYVelocity;
+}
+
+//ready to shoot every second
+bool Laser::readyToShoot() {
+  return millis() - shotTime > 1000;
+}
+
+//ready to move when unhit and travelled less than 64 pixels
+bool Laser::readyToMove() {
+  return !hit and sqrt(pow(XDist, 2) + pow(YDist, 2)) <= 64;
+}
+
+void Laser::moveAndDisplay(Adafruit_SSD1306& display) {
+  X = (uint8_t) (X + sin(dir) * 5 + XVelocity) % 128; //move laser
+  Y = (uint8_t) (Y + cos(dir) * 5 + YVelocity) % 64;
+  XDist = (int8_t) (XDist + sin(dir) * 5); //move limit for how far it can go
+  YDist = (int8_t) (YDist + cos(dir) * 5);
+  display.fillRect(X, Y, 2, 2, WHITE);
+}
+
+
+
 /* Ship */
 
-Ship::Ship() {}
+Ship::Ship() {
+  shotTime = millis();
+  for (uint8_t i = 0; i < 2; i++) {
+    lasers[i] = Laser();
+  }
+}
 
 Ship::Ship(float setX, float setY, float setDir, bool setColor) {
+  Ship();
   X = setX;
   Y = setY;
   dir = setDir;
@@ -47,7 +89,7 @@ void Ship::boost(bool CW) {
   YVelocity += cos(dir) * 4;
 }
 
-void Ship::moveAndDisplay(bool changePos, bool lasersReadyToShoot[2], Adafruit_SSD1306& display) {
+void Ship::moveAndDisplay(bool changePos, bool shoot, Adafruit_SSD1306& display) {
   if (changePos) {
     XVelocity += sin(dir) / 2;
     YVelocity += cos(dir) / 2;
@@ -83,10 +125,22 @@ void Ship::moveAndDisplay(bool changePos, bool lasersReadyToShoot[2], Adafruit_S
       display.drawLine(.66 * XPoints[2][i] + .33 * XPoints[1][i], .66 * YPoints[2][i] + .33 * YPoints[1][i], (XPoints[1][i] + XPoints[2][i]) / 2 - sin(dir) * 5, (YPoints[1][i] + YPoints[2][i]) / 2 - cos(dir) * 5, WHITE);
     }
   }
-  for (uint8_t i = 0; i < 2; i++) { //display lasers in ship
-    if (lasersReadyToShoot[i]) display.drawPixel(i * floatMod(X + changesX[1] / 3, 128) + (-i + 1) * floatMod(X + changesX[2] / 3, 128), i * floatMod(Y + changesY[1] / 3, 64) + (-i + 1) * floatMod(Y + changesY[2] / 3, 64), -color + 1);
+
+  //lasers
+  if (shoot and millis() - shotTime > 100) { //shoot laser
+    shotTime = millis();
+    if (lasers[0].readyToShoot() or lasers[1].readyToShoot()) {
+      lasers[lasers[0].readyToShoot() ? 0 : 1].setUp(dir, X + sin(dir) * 3, Y + cos(dir) * 3, XVelocity, YVelocity);
+    }
   }
-  delete lasersReadyToShoot;
+  for (uint8_t i = 0; i < 2; i++) { //display lasers in ship
+    if (lasers[i].readyToShoot()) display.drawPixel(i * floatMod(X + changesX[1] / 3, 128) + (-i + 1) * floatMod(X + changesX[2] / 3, 128), i * floatMod(Y + changesY[1] / 3, 64) + (-i + 1) * floatMod(Y + changesY[2] / 3, 64), -color + 1);
+  }
+  for (uint8_t i = 0; i < 2; i++) { //move lasers
+    if (lasers[i].readyToMove()) {
+      lasers[i].moveAndDisplay(display);
+    }
+  }
 }
 
 bool Ship::pointInShip(uint8_t XGiven, uint8_t YGiven) {
@@ -149,38 +203,4 @@ void Asteroid::moveAndDisplay(Adafruit_SSD1306& display) {
 //point in square
 bool Asteroid::pointInAsteroid(uint8_t XGiven, uint8_t YGiven) {
   return ((X + Size > 128 and (XGiven >= 0 and XGiven < (uint8_t) (X + Size) % 128 or XGiven >= X and XGiven < 128) or X + Size <= 128 and (XGiven >= X and XGiven < X + Size)) and/*big and between X and Y*/ (Y + Size > 64 and (YGiven >= 0 and YGiven < (uint8_t) (Y + Size) % 64 or YGiven >= Y and YGiven < 64) or Y + Size <= 64 and (YGiven >= Y and YGiven < Y + Size)));
-}
-
-
-
-/* Laser */
-
-void Laser::setUp(float setDir, uint8_t setX, uint8_t setY, float setXVelocity, float setYVelocity) {
-  dir = setDir;
-  Time = millis();
-  hit = false;
-  X = setX;
-  Y = setY;
-  XDist = 0;
-  YDist = 0;
-  XVelocity = setXVelocity;
-  YVelocity = setYVelocity;
-}
-
-//ready to shoot every second
-bool Laser::readyToShoot() {
-  return millis() - Time > 1000;
-}
-
-//ready to move when unhit and travelled less than 64 pixels
-bool Laser::readyToMove() {
-  return !hit and sqrt(pow(XDist, 2) + pow(YDist, 2)) <= 64;
-}
-
-void Laser::moveAndDisplay(Adafruit_SSD1306& display) {
-  X = (uint8_t) (X + sin(dir) * 5 + XVelocity) % 128; //move laser
-  Y = (uint8_t) (Y + cos(dir) * 5 + YVelocity) % 64;
-  XDist = (int8_t) (XDist + sin(dir) * 5); //move limit for how far it can go
-  YDist = (int8_t) (YDist + cos(dir) * 5);
-  display.fillRect(X, Y, 2, 2, WHITE);
 }

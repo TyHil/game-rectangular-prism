@@ -25,7 +25,6 @@ void AstroParty::setup() {
     asteroids[i] = Asteroid(0, 0, 1);
   }
   for (uint8_t i = 0; i < 2; i++) {
-    laserButtonTiming[i] = millis();
     shipTurnTiming[i] = millis();
     lastNoTurn[i] = millis();
     lastTurn[i] = millis();
@@ -91,34 +90,27 @@ void AstroParty::move(Adafruit_SSD1306& display) {
     asteroidSpawn = millis();
   }
   for (uint8_t z = 0; z < 2; z++) {
-    ships[z].moveAndDisplay(1, new bool[2] {lasers[z][0].readyToShoot(), lasers[z][1].readyToShoot()}, display); //always moving
-    for (uint8_t i = 0; i < 2; i++) { //shoot laser on button press
-      if (digitalRead(z ? 3 : 4) and lasers[z][i].readyToShoot() and millis() - laserButtonTiming[z] > 100) {
-        if (ships[z].power) {
-          if (ships[z].power == 2) {
-            for (int8_t x = -1; x < 2; x++) {
-              for (int8_t y = -1; y < 2; y++) {
-                display.drawLine(ships[z].XPoints[0][0] + x, ships[z].YPoints[0][0] + y, (int16_t) (ships[z].XPoints[0][0] + sin(ships[z].dir) * 142) + x, (uint16_t) (ships[z].YPoints[0][0] + cos(ships[z].dir) * 142) + y, WHITE);
-              }
-            }
-            display.display();
-            for (uint8_t i = 0; i <= 142; i++) {
-              if (ships[z ? 0 : 1].pointInShip(ships[z].XPoints[0][0] + sin(ships[z].dir) * i, ships[z].YPoints[0][0] + cos(ships[z].dir) * i)) { //game won and over
-                win = 1;
-                winner = !z;
-              }
-            }
+    bool shoot = digitalRead(z ? 3 : 4);
+    if (shoot and millis() - ships[z].shotTime > 100 and ships[z].power) {
+      shoot = false;
+      ships[z].shotTime = millis();
+      if (ships[z].power == 2) {
+        for (int8_t x = -1; x < 2; x++) {
+          for (int8_t y = -1; y < 2; y++) {
+            display.drawLine(ships[z].XPoints[0][0] + x, ships[z].YPoints[0][0] + y, (int16_t) (ships[z].XPoints[0][0] + sin(ships[z].dir) * 142) + x, (uint16_t) (ships[z].YPoints[0][0] + cos(ships[z].dir) * 142) + y, WHITE);
           }
-          ships[z].power = 0;
-        } else {
-          lasers[z][i].setUp(ships[z].dir, ships[z].X + sin(ships[z].dir) * 3, ships[z].Y + cos(ships[z].dir) * 3, ships[z].XVelocity, ships[z].YVelocity);
-          laserButtonTiming[z] = millis();
+        }
+        display.display();
+        for (uint8_t i = 0; i <= 142; i++) {
+          if (ships[z ? 0 : 1].pointInShip(ships[z].XPoints[0][0] + sin(ships[z].dir) * i, ships[z].YPoints[0][0] + cos(ships[z].dir) * i)) { //game won and over
+            win = 1;
+            winner = !z;
+          }
         }
       }
-      if (lasers[z][i].readyToMove()) {
-        lasers[z][i].moveAndDisplay(display);
-      }
+      ships[z].power = 0;
     }
+    ships[z].moveAndDisplay(1, shoot, display); //always moving
   }
 }
 
@@ -127,12 +119,12 @@ void AstroParty::asteroidLaserCollision() {
     for (uint8_t i = 0; i < 12; i++) {
       if (asteroids[i].Size != 0) {
         for (uint8_t m = 0; m < 2; m++) { //every laser
-          if (lasers[z][m].readyToMove()) {
+          if (ships[z].lasers[m].readyToMove()) {
             for (uint8_t n = 0; n < 2; n++) { //every point on every laser
               for (uint8_t o = 0; o < 2; o++) {
-                if (asteroids[i].pointInAsteroid(lasers[z][m].X + n, lasers[z][m].Y + o)) {
-                  lasers[z][m].hit = true;
-                  if (asteroids[i].hit(lasers[z][m].dir)) {
+                if (asteroids[i].pointInAsteroid(ships[z].lasers[m].X + n, ships[z].lasers[m].Y + o)) {
+                  ships[z].lasers[m].hit = true;
+                  if (asteroids[i].hit(ships[z].lasers[m].dir)) {
                     uint8_t power = random(1, 3);
                     textDisplayNum = power - 1;
                     textDisplay = millis();
@@ -160,15 +152,17 @@ void AstroParty::asteroidLaserCollision() {
   }
 }
 
-void AstroParty::winCheck(Adafruit_SSD1306& display) {
-  for (uint8_t z = 0; z < 2; z++) { //each ship    laser ship collision (point in traingle)
-    for (uint8_t i = 0; i < 2; i++) { //each laser
-      if (lasers[z ? 0 : 1][i].readyToMove()) {
-        for (uint8_t j = 0; j < 2; j++) { //every point...
-          for (uint8_t k = 0; k < 2; k++) { //...on each laser
-            if (ships[z].pointInShip(lasers[z ? 0 : 1][i].X, lasers[z ? 0 : 1][i].Y)) { //game won and over
-              win = 1;
-              winner = z;
+void AstroParty::winCheck(Adafruit_SSD1306& display) { //laser ship collision (point in traingle)
+  if (win != 1) { //can already be 1 from laser power up
+    for (uint8_t z = 0; z < 2; z++) { //each ship
+      for (uint8_t i = 0; i < 2; i++) { //each laser
+        if (ships[z ? 0 : 1].lasers[i].readyToMove()) {
+          for (uint8_t j = 0; j < 2; j++) { //every point...
+            for (uint8_t k = 0; k < 2; k++) { //...on each laser
+              if (ships[z].pointInShip(ships[z ? 0 : 1].lasers[i].X, ships[z ? 0 : 1].lasers[i].Y)) { //game won and over
+                win = 1;
+                winner = z;
+              }
             }
           }
         }
