@@ -5,7 +5,7 @@
   touch buttons, an EEPROM module, a 9v battery, and a power switch all in a black 3D
   printed case.
   Written by Tyler Gordon Hill
-  Version 7.0
+  Version 9.0
 */
 #include "helper.h"
 #include "screen.h"
