@@ -2,8 +2,8 @@ name: Format V1 Check
 
 on: 
   push:
-    paths:
-      - V1GameRectangularPrism/**
+#    paths:
+#      - V1GameRectangularPrism/**
 
 jobs:
   main:
@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Format
-        uses: DoozyX/clang-format-lint-action
+        uses: DoozyX/clang-format-lint-action@v0.17
         with:
           source: "V1GameRectangularPrism"
           extensions: "cpp,h,ino"
