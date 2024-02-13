@@ -71,7 +71,6 @@ void setup() {
   pinMode(5, INPUT_PULLUP);
   display.setTextColor(WHITE);
   app = static_cast<App>(readEEPROM(25)); //read app last used
-  delay(100);
 
 
 

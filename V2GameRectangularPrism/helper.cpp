@@ -3,7 +3,6 @@
   Written by Tyler Gordon Hill
 */
 #include "helper.h"
-#include <Wire.h>
 
 
 
