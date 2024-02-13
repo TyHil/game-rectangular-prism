@@ -205,12 +205,12 @@ void Asteroid::moveAndDisplay(Adafruit_SSD1306& display) {
 bool Asteroid::pointInAsteroid(uint8_t XGiven, uint8_t YGiven) {
   return (
     (
-      X + Size > 128 and (XGiven < (uint8_t) (X + Size) % 128 or (XGiven >= X and XGiven < 128)) or
-      X + Size <= 128 and (XGiven >= X and XGiven < X + Size)
+      (X + Size > 128 and (XGiven < (uint8_t) (X + Size) % 128 or (XGiven >= X and XGiven < 128))) or
+      (X + Size <= 128 and (XGiven >= X and XGiven < X + Size))
     ) and
     (
-      Y + Size > 64 and (YGiven < (uint8_t) (Y + Size) % 64 or (YGiven >= Y and YGiven < 64)) or
-      Y + Size <= 64 and (YGiven >= Y and YGiven < Y + Size)
+      (Y + Size > 64 and (YGiven < (uint8_t) (Y + Size) % 64 or (YGiven >= Y and YGiven < 64))) or
+      (Y + Size <= 64 and (YGiven >= Y and YGiven < Y + Size))
     )
   );
 }

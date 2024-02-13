@@ -38,6 +38,7 @@ float Cube::matrix(Dimension dimension, float a, float x, float y, float z) {
   } else if (dimension == zz) {
     return z;
   }
+  return 0;
 }
 
 void Cube::display(Adafruit_SSD1306& display) {
