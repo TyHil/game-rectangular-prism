@@ -2,9 +2,8 @@
   Helper functions implementation
   Written by Tyler Gordon Hill
 */
-#include <Arduino.h>
-
 #include "helper.h"
+#include <Arduino.h>
 
 
 
