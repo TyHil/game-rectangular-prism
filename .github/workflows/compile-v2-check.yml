@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - V2GameRectangularPrism/**
+      - .github/workflows/compile-v2-check.yml
 
 jobs:
   main:
@@ -12,7 +13,7 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Compile
         uses: arduino/compile-sketches@v1
