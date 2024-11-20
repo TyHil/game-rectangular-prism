@@ -201,11 +201,23 @@ void Asteroids::loseCheck(Adafruit_SSD1306 & display) {
     if (over or asteroids[i].pointInAsteroid(ship.X, ship.Y)) { //or the ship center are in an asteroid
       display.display();
       display.setTextSize(2);
-      display.setCursor(40, 0);
+      display.setTextColor(BLACK);
+      for (int8_t x = -1; x <= 1; x++) {
+        for (int8_t y = -1; y <= 1; y++) {
+          display.setCursor(40 + x, 1 + y);
+          display.print("Game");
+          display.setCursor(40 + x, 22 + y);
+          display.print("Over");
+          display.setCursor(45 + x, 43 + y);
+          display.print(score);
+        }
+      }
+      display.setTextColor(WHITE);
+      display.setCursor(40, 1);
       display.print("Game");
-      display.setCursor(40, 21);
+      display.setCursor(40, 22);
       display.print("Over");
-      display.setCursor(45, 42);
+      display.setCursor(45, 43);
       display.print(score);
       display.display();
       delay(500);

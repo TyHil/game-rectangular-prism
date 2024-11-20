@@ -169,11 +169,19 @@ void AstroParty::winCheck(Adafruit_SSD1306 & display) { //laser ship collision (
   if (win) {
     display.display();
     delay(1000);
-    display.fillRect(26, 21, 18, 19, BLACK);
+    display.fillTriangle(35, 24 - 3, 30 - 3, 36 + 2, 40 + 3, 36 + 2, BLACK);
     if (winner) display.drawTriangle(35, 24, 30, 36, 40, 36, WHITE);
     else display.fillTriangle(35, 24, 30, 36, 40, 36, WHITE);
-    display.setCursor(44, 24);
     display.setTextSize(2);
+    display.setTextColor(BLACK);
+    for (int8_t x = -1; x <= 1; x++) {
+      for (int8_t y = -1; y <= 1; y++) {
+        display.setCursor(44 + x, 24 + y);
+        display.print(" Wins");
+      }
+    }
+    display.setTextColor(WHITE);
+    display.setCursor(44, 24);
     display.print(" Wins");
     display.display();
     delay(500);
